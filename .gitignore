@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+venv/
+.venv/
+store_manager.db
+static/uploads/*.jpg
+!static/uploads/sample_*.jpg
+!static/uploads/store_shelf_preview.jpg
+.DS_Store
+Thumbs.db

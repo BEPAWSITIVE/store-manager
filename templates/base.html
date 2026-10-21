@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>{{ page_title }} | Store Manager</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a',
+            },
+            darknav: '#0f172a',
+            navy: '#0f2b48'
+          },
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Custom Mobile-First CSS -->
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col items-center justify-start overflow-x-hidden select-none">
+
+  <!-- Mobile View Container: Edge-to-edge on mobile, sleek phone frame on desktop -->
+  <div class="w-full max-w-md min-h-screen sm:min-h-[920px] sm:my-4 sm:rounded-[44px] sm:shadow-2xl sm:border-[8px] sm:border-slate-800/90 bg-white flex flex-col relative overflow-hidden">
+
+    <!-- Top Header (Exact Match to Screenshot) -->
+    <header class="w-full px-5 pt-3.5 pb-2.5 bg-white flex items-center justify-between z-30 flex-shrink-0">
+      <!-- Left: Logo & Store Manager Title -->
+      <a href="/scanner" class="flex items-center space-x-3 group">
+        <!-- Isometric Cube/Box Logo -->
+        <div class="w-10 h-10 rounded-2xl bg-[#0f2b48] flex items-center justify-center shadow-md shadow-slate-900/10 flex-shrink-0 group-hover:scale-105 transition-transform">
+          <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+          </svg>
+        </div>
+        <!-- Title & Subtitle -->
+        <div>
+          <h1 class="text-[19px] font-extrabold text-[#0f172a] leading-tight tracking-tight">Store Manager</h1>
+          <p class="text-[11px] font-medium text-[#2563eb] tracking-wide mt-0.5">Scan &nbsp;•&nbsp; Analyse &nbsp;•&nbsp; Track</p>
+        </div>
+      </a>
+
+      <!-- Right: Notification Bell & User Avatar -->
+      <div class="flex items-center space-x-3.5">
+        <!-- Bell with Red Badge -->
+        <button type="button" onclick="openAlertsModal()" class="relative p-2 text-slate-700 hover:text-slate-900 transition-colors" title="Notifications">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+          <span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+        </button>
+
+        <!-- User Avatar "BM" -->
+        <button type="button" onclick="openSettingsModal()" class="w-9 h-9 rounded-full bg-[#0f2b48] text-white font-bold text-xs flex items-center justify-center hover:opacity-95 transition-opacity shadow-sm" title="Settings / Profile">
+          BM
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Area (Full flex height) -->
+    <main class="flex-1 flex flex-col relative overflow-hidden bg-slate-50">
+      {% block content %}{% endblock %}
+    </main>
+
+    <!-- Bottom Navigation Bar (Exact Match to Screenshot) -->
+    <nav class="w-full bg-white border-t border-slate-100/90 px-3 pt-2 pb-1.5 flex items-end justify-around z-30 flex-shrink-0 relative">
+      <!-- 1. Home -->
+      <a href="/scanner" class="flex flex-col items-center justify-center py-1 w-14 {% if active_tab == 'home' %} text-[#2563eb] font-semibold {% else %} text-slate-600 hover:text-slate-900 {% endif %}">
+        <i data-lucide="home" class="w-5 h-5 mb-1"></i>
+        <span class="text-[10px]">Home</span>
+      </a>
+
+      <!-- 2. Stock -->
+      <a href="/inventory" class="flex flex-col items-center justify-center py-1 w-14 {% if active_tab == 'inventory' %} text-[#2563eb] font-bold {% else %} text-slate-600 hover:text-slate-900 {% endif %}">
+        <i data-lucide="package" class="w-5 h-5 mb-1"></i>
+        <span class="text-[10px]">Stock</span>
+      </a>
+
+      <!-- 3. Elevated Blue Scan Button (Center Action) -->
+      <div class="flex flex-col items-center -mt-6">
+        <a href="/scanner" class="w-14 h-14 rounded-full bg-[#2563eb] text-white flex items-center justify-center shadow-lg shadow-blue-500/35 border-[3.5px] border-white active:scale-95 transition-transform">
+          <i data-lucide="scan" class="w-6 h-6 stroke-[2.2]"></i>
+        </a>
+        <span class="text-[10px] font-bold text-[#2563eb] mt-0.5">Scan</span>
+      </div>
+
+      <!-- 4. Reports -->
+      <button type="button" onclick="openReportsModal()" class="flex flex-col items-center justify-center py-1 w-14 text-slate-600 hover:text-slate-900">
+        <i data-lucide="bar-chart-2" class="w-5 h-5 mb-1"></i>
+        <span class="text-[10px]">Reports</span>
+      </button>
+
+      <!-- 5. More -->
+      <button type="button" onclick="openSettingsModal()" class="flex flex-col items-center justify-center py-1 w-14 text-slate-600 hover:text-slate-900">
+        <i data-lucide="menu" class="w-5 h-5 mb-1"></i>
+        <span class="text-[10px]">More</span>
+      </button>
+    </nav>
+
+    <!-- iOS Home Indicator Line -->
+    <div class="w-full bg-white py-1 flex justify-center z-30">
+      <div class="w-32 h-1 bg-slate-900/80 rounded-full"></div>
+    </div>
+
+  </div>
+
+  <!-- Settings / Gemini Model Modal -->
+  <div id="settingsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm hidden">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl relative text-slate-900">
+      <button onclick="closeSettingsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1.5 rounded-full hover:bg-slate-100">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="flex items-center space-x-3 mb-4">
+        <div class="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
+          <i data-lucide="cpu" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-slate-900">AI Model & Engine</h3>
+          <p class="text-xs text-slate-500">Gemini 3.5 Flash Configuration</p>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Model Engine</label>
+          <select id="geminiModelSelect" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-bold focus:outline-none focus:border-blue-500">
+            <option value="gemini-3.5-flash" selected>Gemini 3.5 Flash (High Limit & Speed)</option>
+            <option value="gemini-3.8-flash">Gemini 3.8 Flash (High Performance)</option>
+            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+            <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+            <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Gemini API Key</label>
+          <div class="relative">
+            <input type="password" id="geminiApiKeyInput" placeholder="AIzaSy..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-mono focus:outline-none focus:border-blue-500">
+            <button type="button" onclick="toggleApiKeyVisibility()" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600">
+              <i data-lucide="eye" id="apiKeyEyeIcon" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-500 mt-1.5">
+            Key optional. Without a key, app runs smoothly in demo mode with intelligent recognition & shelf counting.
+          </p>
+        </div>
+
+        <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
+          <button type="button" onclick="closeSettingsModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">
+            Close
+          </button>
+          <button type="button" onclick="saveGeminiApiKey()" id="saveApiKeyBtn" class="px-5 py-2 rounded-xl text-xs font-bold bg-[#2563eb] hover:bg-blue-600 text-white shadow-md shadow-blue-500/20">
+            Save Engine
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reports / Export Modal -->
+  <div id="reportsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm hidden">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl relative text-slate-900">
+      <button onclick="closeReportsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1.5 rounded-full hover:bg-slate-100">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      <div class="flex items-center space-x-3 mb-4">
+        <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+          <i data-lucide="file-spreadsheet" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Store Reports</h3>
+          <p class="text-xs text-slate-500">Export inventory audit & valuation</p>
+        </div>
+      </div>
+      <div class="space-y-3">
+        <a href="/api/inventory/export/csv" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center justify-between">
+          <span class="flex items-center"><i data-lucide="download" class="w-4 h-4 mr-2 text-blue-600"></i> Download CSV Inventory</span>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+        </a>
+        <a href="/api/inventory/export/json" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center justify-between">
+          <span class="flex items-center"><i data-lucide="code" class="w-4 h-4 mr-2 text-emerald-600"></i> Download JSON Callset</span>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+        </a>
+        <a href="/inventory" class="w-full py-2.5 px-4 rounded-xl bg-[#2563eb] text-white text-xs font-bold flex items-center justify-center shadow-md">
+          Open Full Stock Manager
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alerts Modal -->
+  <div id="alertsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm hidden">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl relative text-slate-900">
+      <button onclick="closeAlertsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1.5 rounded-full hover:bg-slate-100">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      <div class="flex items-center space-x-3 mb-4">
+        <div class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Stock Notifications</h3>
+          <p class="text-xs text-slate-500">Live store inventory alerts</p>
+        </div>
+      </div>
+      <div class="space-y-2.5 text-xs">
+        <div class="p-3 rounded-xl bg-amber-50 border border-amber-200/60 flex items-start space-x-2.5">
+          <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5"></i>
+          <div>
+            <div class="font-bold text-amber-900">Colgate Total Low Stock</div>
+            <div class="text-[11px] text-amber-800">Only 3 units left on Rack C-04. Refill recommended.</div>
+          </div>
+        </div>
+        <div class="p-3 rounded-xl bg-blue-50 border border-blue-200/60 flex items-start space-x-2.5">
+          <i data-lucide="info" class="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5"></i>
+          <div>
+            <div class="font-bold text-blue-900">Gemini 3.5 Flash Active</div>
+            <div class="text-[11px] text-blue-800">AI multi-angle scanning & rack counter ready.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 flex flex-col space-y-2 pointer-events-none w-11/12 max-w-sm"></div>
+
+  <!-- Base JS Scripts -->
+  <script src="/static/js/app.js"></script>
+  {% block scripts %}{% endblock %}
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      if (window.lucide) lucide.createIcons();
+    });
+  </script>
+</body>
+</html>

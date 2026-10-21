@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex-1 flex flex-col px-4 py-3 space-y-3.5 overflow-y-auto">
+
+  <!-- Header Section -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h2 class="text-lg font-black text-slate-900 tracking-tight">Available Stock</h2>
+      <p class="text-[11px] text-slate-500">Real-time inventory from AI scans</p>
+    </div>
+    <a href="/scanner" class="px-3.5 py-2 rounded-2xl bg-[#2563eb] text-white text-xs font-bold shadow-md shadow-blue-500/20 flex items-center space-x-1.5 active:scale-95 transition-transform">
+      <i data-lucide="scan" class="w-3.5 h-3.5"></i>
+      <span>Scan New</span>
+    </a>
+  </div>
+
+  <!-- KPI Summary Chips Grid -->
+  <div class="grid grid-cols-3 gap-2">
+    <!-- Total Units -->
+    <div class="p-2.5 rounded-2xl bg-white border border-slate-100 shadow-sm text-center">
+      <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Units</div>
+      <div class="text-base font-black text-slate-900 mt-0.5" id="statTotalUnits">0</div>
+    </div>
+    <!-- Low Stock -->
+    <div onclick="filterByStatus('low_stock')" class="p-2.5 rounded-2xl bg-amber-50/80 border border-amber-200/60 shadow-sm text-center cursor-pointer">
+      <div class="text-[10px] font-bold text-amber-700 uppercase tracking-wider">Low Stock</div>
+      <div class="text-base font-black text-amber-600 mt-0.5" id="statLowStock">0</div>
+    </div>
+    <!-- Valuation -->
+    <div class="p-2.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/60 shadow-sm text-center">
+      <div class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Valuation</div>
+      <div class="text-base font-black text-emerald-600 mt-0.5" id="statTotalValuation">₹0</div>
+    </div>
+  </div>
+
+  <!-- Search & Filter Controls -->
+  <div class="space-y-2">
+    <!-- Search Bar -->
+    <div class="relative w-full">
+      <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-2.5 text-slate-400"></i>
+      <input type="text" id="inventorySearchInput" placeholder="Search name, brand, rack, barcode..." class="w-full bg-white border border-slate-200 rounded-2xl pl-10 pr-4 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors shadow-sm" oninput="debounceSearch()">
+    </div>
+
+    <!-- Filter Pills (Scrollable horizontally) -->
+    <div class="flex items-center space-x-1.5 overflow-x-auto pb-1 text-[11px]">
+      <button type="button" onclick="filterByStatus('all')" class="px-3 py-1 rounded-full bg-slate-900 text-white font-bold whitespace-nowrap flex-shrink-0">All Items</button>
+      <button type="button" onclick="filterByStatus('low_stock')" class="px-3 py-1 rounded-full bg-white border border-slate-200 text-amber-700 font-semibold whitespace-nowrap flex-shrink-0">Low Stock</button>
+      <button type="button" onclick="filterByStatus('expiring_soon')" class="px-3 py-1 rounded-full bg-white border border-slate-200 text-orange-700 font-semibold whitespace-nowrap flex-shrink-0">Expiring Soon</button>
+      <button type="button" onclick="filterByStatus('in_stock')" class="px-3 py-1 rounded-full bg-white border border-slate-200 text-emerald-700 font-semibold whitespace-nowrap flex-shrink-0">In Stock</button>
+      <select id="filterCategory" onchange="applyFilters()" class="px-2 py-1 rounded-full bg-white border border-slate-200 text-slate-700 font-semibold text-[11px] whitespace-nowrap focus:outline-none">
+        <option value="all">All Categories</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Product Cards List (Mobile-Optimized) -->
+  <div id="mobileProductsList" class="space-y-2.5 pb-6">
+    <!-- Dynamic Cards via JavaScript -->
+    <div class="p-8 text-center text-slate-400">
+      <div class="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+      <span class="text-xs">Loading available stock...</span>
+    </div>
+  </div>
+
+  <!-- Empty Notice -->
+  <div id="inventoryEmptyNotice" class="hidden p-8 text-center bg-white rounded-3xl border border-slate-100 shadow-sm">
+    <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-2">
+      <i data-lucide="package-x" class="w-6 h-6"></i>
+    </div>
+    <h3 class="text-sm font-bold text-slate-800">No stock found</h3>
+    <p class="text-xs text-slate-400 mt-0.5 mb-3">Try different search terms or scan new items</p>
+    <a href="/scanner" class="px-4 py-2 rounded-xl bg-[#2563eb] text-white text-xs font-bold inline-flex items-center space-x-1">
+      <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+      <span>Scan with Camera</span>
+    </a>
+  </div>
+
+</div>
+
+<!-- Photos Modal -->
+<div id="photosModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm hidden">
+  <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl relative text-slate-900">
+    <button onclick="closePhotosModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1 rounded-full hover:bg-slate-100">
+      <i data-lucide="x" class="w-5 h-5"></i>
+    </button>
+    <div class="mb-3">
+      <h3 class="text-sm font-bold text-slate-900" id="photosModalTitle">Product Photos</h3>
+      <p class="text-[11px] text-slate-500" id="photosModalSubtitle">Captured angles & rack scans</p>
+    </div>
+    <div class="w-full aspect-square rounded-2xl bg-slate-900 overflow-hidden relative flex items-center justify-center mb-3">
+      <img id="photosModalMainImg" src="" alt="Captured Image" class="w-full h-full object-cover">
+      <div id="photosModalMainLabel" class="absolute bottom-2 left-2 bg-black/75 px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white border border-white/20">
+        Front View
+      </div>
+    </div>
+    <div class="flex items-center space-x-2 overflow-x-auto pb-1" id="photosModalThumbStrip"></div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="editProductModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm hidden">
+  <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl relative text-slate-900 max-h-[85vh] overflow-y-auto">
+    <button onclick="closeEditModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1 rounded-full hover:bg-slate-100">
+      <i data-lucide="x" class="w-5 h-5"></i>
+    </button>
+    <h3 class="text-sm font-bold text-slate-900 mb-3">Edit Stock Product</h3>
+    <form id="editProductForm" onsubmit="handleEditFormSubmit(event)" class="space-y-3">
+      <input type="hidden" id="editProductId">
+      <div>
+        <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Product Title</label>
+        <input type="text" id="editName" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-900" required>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Brand</label>
+          <input type="text" id="editBrand" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-900">
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Quantity</label>
+          <input type="number" id="editQuantity" min="0" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-900" required>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Location</label>
+          <input type="text" id="editLocation" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-900">
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Expiry Date</label>
+          <input type="date" id="editExpiry" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-900">
+        </div>
+      </div>
+      <div>
+        <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">MRP (₹)</label>
+        <input type="number" step="0.01" id="editMrp" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-900">
+      </div>
+      <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
+        <button type="button" onclick="closeEditModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-500">Cancel</button>
+        <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold bg-[#2563eb] text-white">Save Stock</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/inventory.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    initInventoryPage();
+  });
+</script>
+{% endblock %}

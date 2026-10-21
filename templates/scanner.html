@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex-1 flex flex-col justify-between py-2 sm:py-3 relative">
+
+  <!-- THE MOBILE CAMERA CARD (Exact Match to Screenshot) -->
+  <div class="mobile-camera-card" id="cameraViewportCard">
+    
+    <!-- Camera Video Element -->
+    <video id="cameraFeed" autoplay playsinline muted></video>
+
+    <!-- Default Fallback Preview (Shows Exact Store Shelf from Screenshot) -->
+    <img id="cameraFallbackImg" src="/static/uploads/store_shelf_preview.jpg" alt="Store Shelf Camera View" class="camera-preview-fallback">
+
+    <!-- Flash Effect Layer -->
+    <div id="flashEffectLayer" class="flash-effect-layer"></div>
+
+    <!-- 1. TOP-LEFT: LIVE BADGE -->
+    <div class="absolute top-4 left-4 z-20 flex items-center space-x-1.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-white text-[11px] font-bold shadow-lg">
+      <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+      <span class="tracking-wider">LIVE</span>
+    </div>
+
+    <!-- 2. TOP-RIGHT: SCAN MODE SWITCHER -->
+    <div class="absolute top-4 right-4 z-20 flex items-center bg-black/65 backdrop-blur-md p-1 rounded-full border border-white/15 text-[10px] shadow-lg">
+      <button type="button" onclick="setScanMode('product')" id="modeProductBtn" class="px-2.5 py-1 rounded-full font-bold bg-[#2563eb] text-white transition-all">
+        Product Angles
+      </button>
+      <button type="button" onclick="setScanMode('rack')" id="modeRackBtn" class="px-2.5 py-1 rounded-full font-bold text-white/70 hover:text-white transition-all">
+        Rack Count
+      </button>
+    </div>
+
+    <!-- 3. FOUR WHITE CORNER RETICLES (Framing Brackets) -->
+    <div class="corner-reticle corner-reticle-tl"></div>
+    <div class="corner-reticle corner-reticle-tr"></div>
+    <div class="corner-reticle corner-reticle-bl"></div>
+    <div class="corner-reticle corner-reticle-br"></div>
+
+    <!-- 4. CENTER FLOATING HUD TOOLTIP (Exact Match to Screenshot) -->
+    <div id="cameraStatusPill" class="camera-status-pill absolute top-[28%] left-1/2 -translate-x-1/2 z-20 flex flex-col items-center justify-center px-6 py-3 rounded-2xl bg-[#0f2438]/90 backdrop-blur-md border border-white/15 shadow-2xl text-center pointer-events-none transition-all w-11/12 max-w-[270px]">
+      <div class="flex items-center space-x-2 text-white font-bold text-sm tracking-wide">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400" id="statusPulseDot"></span>
+        <span id="cameraStatusTitle">Camera Ready</span>
+      </div>
+      <p id="cameraStatusSubtitle" class="text-[11px] text-slate-300 font-medium mt-0.5 leading-snug">Point at products, boxes or racks</p>
+    </div>
+
+    <!-- 5. ANGLE PROGRESS CHIPS (When in Product Mode) -->
+    <div id="angleSlotsBar" class="absolute top-[44%] left-0 right-0 z-20 flex items-center justify-center space-x-2 px-4 transition-all">
+      <button type="button" onclick="selectSlotAngle('front')" id="chip-front" class="px-2.5 py-1 rounded-xl bg-[#0f2438]/80 backdrop-blur-md border border-blue-400 text-white text-[10px] font-bold shadow-md flex items-center space-x-1">
+        <span>1. Front</span>
+      </button>
+      <button type="button" onclick="selectSlotAngle('back')" id="chip-back" class="px-2.5 py-1 rounded-xl bg-black/50 backdrop-blur-md border border-white/10 text-white/70 text-[10px] font-medium shadow-md flex items-center space-x-1">
+        <span>2. Back</span>
+      </button>
+      <button type="button" onclick="selectSlotAngle('expiry')" id="chip-expiry" class="px-2.5 py-1 rounded-xl bg-black/50 backdrop-blur-md border border-white/10 text-white/70 text-[10px] font-medium shadow-md flex items-center space-x-1">
+        <span>3. Expiry</span>
+      </button>
+      <button type="button" onclick="selectSlotAngle('side')" id="chip-side" class="px-2.5 py-1 rounded-xl bg-black/50 backdrop-blur-md border border-white/10 text-white/70 text-[10px] font-medium shadow-md flex items-center space-x-1">
+        <span>4. Extra</span>
+      </button>
+    </div>
+
+    <!-- Annotated Rack Count Overlay (When Rack Scanned) -->
+    <img id="rackAnnotatedOverlay" src="" alt="Rack Count Result" class="absolute inset-0 w-full h-full object-cover z-15 hidden">
+
+    <!-- 6. FLOATING BOTTOM CAMERA CONTROL CAPSULE (Exact Match to Screenshot) -->
+    <div class="camera-actions-capsule absolute bottom-4 left-4 right-4 z-20 px-4 py-3 rounded-3xl flex items-center justify-between">
+      <!-- Flash/Torch -->
+      <button type="button" onclick="toggleFlashlight()" id="flashToggleBtn" class="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white flex items-center justify-center transition-all shadow-md" title="Toggle Flash / Light">
+        <i data-lucide="zap" class="w-5 h-5"></i>
+      </button>
+
+      <!-- Large Shutter Button -->
+      <button type="button" onclick="handleShutterPress()" id="mobileShutterBtn" class="shutter-ring w-20 h-20 rounded-full border-[3px] border-white flex items-center justify-center p-1 bg-white/10 active:scale-90 transition-transform shadow-2xl" title="Take Photo">
+        <div class="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-inner">
+          <div id="shutterInnerDot" class="w-2.5 h-2.5 rounded-full bg-[#0f2438]"></div>
+        </div>
+      </button>
+
+      <!-- Gallery / File Upload -->
+      <label class="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white flex items-center justify-center transition-all shadow-md cursor-pointer" title="Upload Photos from Gallery">
+        <i data-lucide="image" class="w-5 h-5"></i>
+        <input type="file" id="mobileGalleryInput" accept="image/*" class="hidden" onchange="handleGalleryUpload(event)">
+      </label>
+
+      <!-- Camera Flip -->
+      <button type="button" onclick="switchCameraFacing()" class="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white flex items-center justify-center transition-all shadow-md" title="Flip Camera">
+        <i data-lucide="camera" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- 7. SLIDE-UP BOTTOM SHEET DRAWER (NATIVE MOBILE SHEET) -->
+  <div id="scanResultDrawer" class="bottom-sheet-drawer">
+    <!-- Pull Bar Handle -->
+    <div class="drawer-handle" onclick="toggleDrawer()"></div>
+
+    <div class="drawer-scroller space-y-4">
+      <!-- Sheet Header -->
+      <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+        <div>
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-200">
+            Gemini 3.5 Flash Analysis
+          </span>
+          <h2 class="text-base font-extrabold text-slate-900 mt-1" id="drawerTitle">Product & Inventory Review</h2>
+        </div>
+        <button type="button" onclick="closeDrawer()" class="p-1 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Analyzed Product Fields Form -->
+      <form id="drawerProductForm" class="space-y-3" onsubmit="event.preventDefault();">
+        <div>
+          <label class="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">Product Title</label>
+          <input type="text" id="drawerName" placeholder="e.g. Ferrero Nutella Hazelnut Spread" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">Brand Name</label>
+            <input type="text" id="drawerBrand" placeholder="e.g. Ferrero" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">Category</label>
+            <input type="text" id="drawerCategory" placeholder="e.g. Spreads" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">Expiry Date</label>
+            <input type="date" id="drawerExpiry" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">Batch / Lot No</label>
+            <input type="text" id="drawerBatch" placeholder="FN-84920" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:border-blue-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="block text-[9px] font-bold text-slate-600 uppercase tracking-wider mb-1">Net Wt</label>
+            <input type="text" id="drawerNetWeight" placeholder="350g" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-900">
+          </div>
+          <div>
+            <label class="block text-[9px] font-bold text-slate-600 uppercase tracking-wider mb-1">MRP (₹)</label>
+            <input type="number" step="0.01" id="drawerMrp" placeholder="395" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-900">
+          </div>
+          <div>
+            <label class="block text-[9px] font-bold text-slate-600 uppercase tracking-wider mb-1">Barcode</label>
+            <input type="text" id="drawerBarcode" placeholder="80005..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-mono text-slate-900">
+          </div>
+        </div>
+
+        <!-- Shelf & Counted Quantity -->
+        <div class="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-200/80 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-blue-900 flex items-center">
+              <i data-lucide="boxes" class="w-3.5 h-3.5 mr-1.5 text-blue-600"></i>
+              Counted Available Stock
+            </span>
+            <span id="drawerDetectedBadge" class="text-[10px] font-extrabold bg-blue-600 text-white px-2 py-0.5 rounded-full">
+              Rack: 12 Units
+            </span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5 pt-1">
+            <div>
+              <label class="block text-[9px] font-bold text-blue-900 uppercase tracking-wider mb-1">Quantity</label>
+              <div class="flex items-center space-x-1">
+                <button type="button" onclick="adjustDrawerQty(-1)" class="w-7 h-7 rounded-lg bg-white border border-blue-200 text-blue-900 font-bold flex items-center justify-center">-</button>
+                <input type="number" id="drawerQuantity" value="12" min="0" class="flex-1 bg-white border border-blue-200 rounded-lg px-2 py-1 text-center text-xs font-extrabold text-blue-950">
+                <button type="button" onclick="adjustDrawerQty(1)" class="w-7 h-7 rounded-lg bg-white border border-blue-200 text-blue-900 font-bold flex items-center justify-center">+</button>
+              </div>
+            </div>
+            <div>
+              <label class="block text-[9px] font-bold text-blue-900 uppercase tracking-wider mb-1">Shelf Location</label>
+              <input type="text" id="drawerLocation" value="Rack A-02 (Aisle 3)" class="w-full bg-white border border-blue-200 rounded-lg px-2.5 py-1 text-xs text-blue-950 font-medium">
+            </div>
+          </div>
+        </div>
+
+        <!-- One-Tap Transfer CTA Button -->
+        <button type="button" onclick="submitDrawerToStock()" id="drawerSubmitBtn" class="w-full py-3.5 px-4 rounded-2xl bg-[#2563eb] hover:bg-blue-600 active:scale-98 text-white font-extrabold text-sm shadow-xl shadow-blue-500/25 transition-all flex items-center justify-center space-x-2">
+          <span>Transfer to Stock Manager</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/camera.js"></script>
+<script src="/static/js/rack_counter.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    initCameraSystem();
+  });
+</script>
+{% endblock %}
