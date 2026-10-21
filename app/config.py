@@ -1,20 +1,46 @@
 import os
+import tempfile
 from pathlib import Path
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
-UPLOAD_DIR = BASE_DIR / "static" / "uploads"
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+def get_upload_dir() -> Path:
+    # On Vercel / serverless, write to /tmp/uploads
+    if os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"):
+        d = Path(tempfile.gettempdir()) / "uploads"
+        d.mkdir(parents=True, exist_ok=True)
+        return d
+    try:
+        d = BASE_DIR / "static" / "uploads"
+        d.mkdir(parents=True, exist_ok=True)
+        return d
+    except Exception:
+        d = Path(tempfile.gettempdir()) / "uploads"
+        d.mkdir(parents=True, exist_ok=True)
+        return d
 
-DB_PATH = BASE_DIR / "store_manager.db"
+def get_db_path() -> Path:
+    if os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"):
+        return Path(tempfile.gettempdir()) / "store_manager.db"
+    try:
+        test_file = BASE_DIR / ".test_write"
+        with open(test_file, "w") as f:
+            f.write("ok")
+        test_file.unlink()
+        return BASE_DIR / "store_manager.db"
+    except Exception:
+        return Path(tempfile.gettempdir()) / "store_manager.db"
+
+UPLOAD_DIR = get_upload_dir()
+DB_PATH = get_db_path()
 
 HOST = os.getenv("HOST", "127.0.0.1")
 PORT = int(os.getenv("PORT", "8000"))
 DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1", "yes")
 
-# Gemini API configuration - Defaults to Gemini 3.5 Flash as requested
+# Gemini API configuration - Defaults to Gemini 3.5 Flash
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash").strip()
 APP_MODE = os.getenv("APP_MODE", "live" if GEMINI_API_KEY else "demo")
@@ -37,31 +63,34 @@ def set_gemini_config(key: str = None, model: str = None) -> None:
     if GEMINI_API_KEY:
         APP_MODE = "live"
 
-    # Persist in .env
-    env_file = BASE_DIR / ".env"
-    lines = []
-    has_key = False
-    has_model = False
+    try:
+        env_file = BASE_DIR / ".env"
+        lines = []
+        has_key = False
+        has_model = False
 
-    if env_file.exists():
-        with open(env_file, "r", encoding="utf-8") as f:
-            for line in f:
-                if line.startswith("GEMINI_API_KEY="):
-                    lines.append(f"GEMINI_API_KEY={GEMINI_API_KEY}\n")
-                    has_key = True
-                elif line.startswith("GEMINI_MODEL="):
-                    lines.append(f"GEMINI_MODEL={GEMINI_MODEL}\n")
-                    has_model = True
-                else:
-                    lines.append(line)
+        if env_file.exists():
+            with open(env_file, "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.startswith("GEMINI_API_KEY="):
+                        lines.append(f"GEMINI_API_KEY={GEMINI_API_KEY}\n")
+                        has_key = True
+                    elif line.startswith("GEMINI_MODEL="):
+                        lines.append(f"GEMINI_MODEL={GEMINI_MODEL}\n")
+                        has_model = True
+                    else:
+                        lines.append(line)
 
-    if not has_key:
-        lines.append(f"GEMINI_API_KEY={GEMINI_API_KEY}\n")
-    if not has_model:
-        lines.append(f"GEMINI_MODEL={GEMINI_MODEL}\n")
+        if not has_key:
+            lines.append(f"GEMINI_API_KEY={GEMINI_API_KEY}\n")
+        if not has_model:
+            lines.append(f"GEMINI_MODEL={GEMINI_MODEL}\n")
 
-    with open(env_file, "w", encoding="utf-8") as f:
-        f.writelines(lines)
+        with open(env_file, "w", encoding="utf-8") as f:
+            f.writelines(lines)
+    except Exception:
+        # On Vercel / read-only filesystem, ignore writing to .env
+        pass
 
 def set_gemini_api_key(key: str) -> None:
     set_gemini_config(key=key)

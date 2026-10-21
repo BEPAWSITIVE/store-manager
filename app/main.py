@@ -1,11 +1,12 @@
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 from pathlib import Path
 
 from app.config import (
     BASE_DIR, HOST, PORT, DEBUG,
+    UPLOAD_DIR,
     get_gemini_api_key, get_gemini_model, APP_MODE
 )
 from app.database import init_db
@@ -20,6 +21,23 @@ app = FastAPI(
 # Static and templates
 static_dir = BASE_DIR / "static"
 templates_dir = BASE_DIR / "templates"
+
+# Endpoint to serve uploads from both static/uploads and /tmp/uploads on Vercel
+@app.get("/static/uploads/{filename}")
+async def serve_upload(filename: str):
+    # Check in temp uploads first (where new uploads go on Vercel)
+    tmp_file = UPLOAD_DIR / filename
+    if tmp_file.exists():
+        return FileResponse(tmp_file)
+    # Check in local static uploads
+    static_file = static_dir / "uploads" / filename
+    if static_file.exists():
+        return FileResponse(static_file)
+    # Fallback to store shelf preview
+    fallback_file = static_dir / "uploads" / "store_shelf_preview.jpg"
+    if fallback_file.exists():
+        return FileResponse(fallback_file)
+    return FileResponse(static_file)
 
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 templates = Jinja2Templates(directory=str(templates_dir))
