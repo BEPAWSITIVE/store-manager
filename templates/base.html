@@ -89,10 +89,11 @@
 
       <!-- 3. Center Camera Button (Elevated Circle with Blue Inner Camera) -->
       <div class="flex flex-col items-center -mt-7">
-        <button type="button" onclick="triggerMainCapture()" id="centerCaptureBtn" class="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-lg shadow-slate-900/10 active:scale-95 transition-transform border border-slate-100/60 p-1" title="Capture & Analyze">
+        <button type="button" onclick="handleCenterCaptureClick()" id="centerCaptureBtn" class="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-lg shadow-slate-900/10 active:scale-95 transition-transform border border-slate-100/60 p-1 relative" title="Click Photo">
           <div class="w-12 h-12 rounded-full bg-[#2563eb] text-white flex items-center justify-center shadow-md shadow-blue-500/30">
             <i data-lucide="camera" class="w-5 h-5 stroke-[2.2]"></i>
           </div>
+          <span id="centerCaptureCountBadge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white font-extrabold text-[10px] rounded-full flex items-center justify-center border-2 border-white shadow-md">0</span>
         </button>
       </div>
 

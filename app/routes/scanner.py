@@ -17,6 +17,13 @@ class AngleImageUpload(BaseModel):
     angle: str = Field(..., description="front, back, expiry, side")
     image_base64: str
 
+class BatchImageItem(BaseModel):
+    angle: Optional[str] = "Angle"
+    image_base64: str
+
+class BatchAnalyzeRequest(BaseModel):
+    images: List[BatchImageItem] = Field(..., description="List of base64 photos from multiple angles")
+
 class ProductAnalyzeRequest(BaseModel):
     angles: List[Dict[str, str]] = Field(..., description="List of {'angle': 'front', 'url': '/static/...', 'path': '...'}")
 
@@ -107,6 +114,39 @@ async def analyze_product(payload: ProductAnalyzeRequest):
     return {
         "success": True,
         "analysis": analysis,
+        "angle_count": len(processed_angles)
+    }
+
+@router.post("/analyze-batch")
+async def analyze_batch(payload: BatchAnalyzeRequest):
+    if not payload.images:
+        raise HTTPException(status_code=400, detail="No photos provided for analysis.")
+
+    processed_angles = []
+    saved_urls = []
+    for idx, item in enumerate(payload.images):
+        try:
+            angle_name = item.angle or f"Angle {idx+1}"
+            url, filepath = save_base64_image(item.image_base64, prefix=f"angle_{idx+1}")
+            processed_angles.append({
+                "angle": angle_name,
+                "path": Path(filepath),
+                "url": url
+            })
+            saved_urls.append(url)
+        except Exception as e:
+            print(f"[Error saving photo angle {idx}]: {e}")
+
+    if not processed_angles:
+        raise HTTPException(status_code=400, detail="Failed to save captured photos.")
+
+    analysis = analyze_product_multi_angle(processed_angles)
+    primary_image = saved_urls[0] if saved_urls else ""
+    return {
+        "success": True,
+        "analysis": analysis,
+        "primary_image": primary_image,
+        "angle_images": saved_urls,
         "angle_count": len(processed_angles)
     }
 

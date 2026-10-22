@@ -81,22 +81,27 @@ def analyze_product_multi_angle(images: List[Dict[str, Any]]) -> Dict[str, Any]:
 
         prompt = f"""
 You are an expert AI Retail Store Scanner and Product Cataloging System.
-You are given {len(images)} photos of the same retail item captured from angles: {', '.join(angle_labels)}.
+You are given {len(images)} photos of the same retail item or product shelf/rack captured from angles: {', '.join(angle_labels)}.
 
-Carefully inspect all angles to accurately extract:
-1. Product Name: Complete and clean retail product title.
-2. Brand Name: Manufacturer or brand name.
-3. Category: Choose best from: Grocery, Snacks, Beverages, Personal Care, Household & Cleaning, Dairy, Bakery, Electronics, Medicine, General.
-4. Net Weight / Quantity: e.g. '500g', '1L', '75g', 'Pack of 4'.
-5. MRP / Price: Estimated or printed maximum retail price (number only, 0 if not visible).
-6. Estimated Cost Price: Wholesale / purchase cost (typically 75-80% of MRP).
-7. Manufacturing Date: Format 'YYYY-MM-DD' or 'YYYY-MM' or blank.
-8. Expiry Date: Format 'YYYY-MM-DD' or 'YYYY-MM' if perishable/packaged food/cosmetic/medicine, or blank if non-perishable.
-9. Batch / Lot Number: Printed batch code if detected, else blank.
-10. Barcode: Digits of the EAN-13, UPC, or barcode if visible, else blank.
-11. SKU: Suggest a clean uppercase SKU (e.g. BRAND-PROD-SIZE).
-12. Confidence: Float between 0.85 and 1.0.
-13. Summary: Brief 1-2 sentence description of the item and state of packaging.
+Carefully inspect ALL captured photos across all angles to accurately extract only what is actually visible on the packaging or shelf:
+1. Product Name: Complete and clean retail product title. If cannot be read, return empty string "".
+2. Brand Name: Manufacturer or brand name. If not visible, return empty string "".
+3. Category: Choose best from: Grocery, Snacks, Beverages, Personal Care, Household & Cleaning, Dairy, Bakery, Electronics, Medicine, General. If not certain, return empty string "".
+4. Net Weight / Quantity: e.g. '500g', '1L', '75g', 'Pack of 4'. If not visible, return empty string "".
+5. MRP / Price: Maximum retail price (number only, 0.0 if not visible).
+6. Estimated Cost Price: Wholesale / purchase cost (0.0 if not visible).
+7. Manufacturing Date: Format 'DD/MM/YYYY' or 'YYYY-MM-DD' if visible, else empty string "".
+8. Expiry Date: Format 'DD/MM/YYYY' or 'YYYY-MM-DD' if visible, else empty string "".
+9. Batch / Lot Number: Printed batch code if detected, else empty string "".
+10. Barcode: Digits of the EAN-13, UPC, or barcode if visible, else empty string "".
+11. Verified Count: Total number of units/boxes visible (e.g. if a shelf, box carton, or rack is pictured, count the items; default 1 for a single product item).
+12. Shelf Location: If any rack/shelf label or aisle tag is visible (e.g. 'Rack C-04'), extract it, else empty string "".
+13. Summary: Brief 1-sentence description of the item.
+
+CRITICAL INSTRUCTIONS:
+- Do NOT hallucinate or make up details that are not visible.
+- If an attribute is not present or not readable on any of the captured photos, return an empty string "" (or 0.0 for mrp/cost_price).
+- Do not output pre-filled or placeholder demo data.
 
 Return ONLY a valid JSON object matching this schema:
 {{
@@ -110,8 +115,9 @@ Return ONLY a valid JSON object matching this schema:
     "expiry_date": "string",
     "batch_no": "string",
     "barcode": "string",
-    "sku": "string",
-    "confidence": 0.96,
+    "quantity": 1,
+    "location": "string",
+    "confidence": 0.95,
     "summary": "string"
 }}
 """
@@ -251,27 +257,24 @@ Return ONLY a valid JSON object matching this schema:
         }
 
 def get_mock_product_analysis(images: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """Provides high-quality realistic fallback extraction for demo/testing."""
+    """Fallback when Gemini API key is missing or model call fails. Returns blank fields so no fake data is prefilled."""
     angle_count = len(images)
-    from datetime import datetime, timedelta
-    
-    future_expiry = (datetime.now() + timedelta(days=300)).strftime("%Y-%m-%d")
-    mfg_date = (datetime.now() - timedelta(days=65)).strftime("%Y-%m-%d")
-
     return {
-        "name": "Nestle Maggi 2-Minute Masala Noodles",
-        "brand": "Nestle",
-        "category": "Snacks & Instant Foods",
-        "net_weight": "280g (Pack of 4)",
-        "mrp": 56.0,
-        "cost_price": 44.0,
-        "manufacturing_date": mfg_date,
-        "expiry_date": future_expiry,
-        "batch_no": "MAG-89240B",
-        "barcode": "8901058852315",
-        "sku": "NES-MAG-280G",
-        "confidence": 0.97,
-        "summary": f"Identified standard retail packaging across {angle_count} angle photos. Expiry date, barcode, and batch details successfully verified.",
+        "name": "",
+        "brand": "",
+        "category": "",
+        "net_weight": "",
+        "mrp": 0.0,
+        "cost_price": 0.0,
+        "manufacturing_date": "",
+        "expiry_date": "",
+        "batch_no": "",
+        "barcode": "",
+        "sku": "",
+        "quantity": 1,
+        "location": "",
+        "confidence": 0.0,
+        "summary": f"Captured {angle_count} angle photo(s). Live packaging analysis requires GEMINI_API_KEY.",
         "is_ai_live": False,
-        "model_used": get_gemini_model()
+        "model_used": ""
     }

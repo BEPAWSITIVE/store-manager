@@ -3,24 +3,35 @@
 {% block content %}
 <div class="flex-1 min-h-0 flex flex-col px-4 sm:px-5 py-3.5 space-y-3 overflow-y-auto bg-white">
 
-  <!-- Header Section (Exact Match to Right Screenshot) -->
+  <!-- Header Section (Exact Match to Screenshot) -->
   <div class="flex items-start justify-between pb-0.5">
     <div>
       <h2 class="text-xl font-extrabold text-slate-900 tracking-tight leading-snug">Product & Inventory Review</h2>
-      <p class="text-xs text-slate-500 font-medium mt-0.5">Verify detected retail attributes</p>
+      <p class="text-xs text-slate-500 font-medium mt-0.5">Verify captured retail packaging details</p>
     </div>
-    <button type="button" onclick="openSettingsModal()" class="p-1.5 text-slate-700 hover:text-slate-900" title="Settings">
-      <i data-lucide="sliders-horizontal" class="w-5 h-5 stroke-[2]"></i>
-    </button>
+    <a href="/" class="p-1.5 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition-colors" title="Retake / Add More Photos">
+      <i data-lucide="camera" class="w-5 h-5 stroke-[2]"></i>
+    </a>
   </div>
 
-  <!-- Review Form Cards -->
+  <!-- Captured Angle Photos Strip (Shows what the user actually photographed) -->
+  <div id="reviewPhotosContainer" class="hidden flex flex-col space-y-1">
+    <div class="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider px-0.5">
+      <span>CAPTURED PRODUCT ANGLES</span>
+      <span id="reviewAngleCountBadge" class="text-blue-600 font-extrabold">0 Photos</span>
+    </div>
+    <div id="reviewPhotosStrip" class="flex items-center space-x-2 overflow-x-auto py-1 scrollbar-none">
+      <!-- Injected dynamically via review.js -->
+    </div>
+  </div>
+
+  <!-- Review Form Cards (Only Populated with Captured Details) -->
   <form id="reviewForm" onsubmit="event.preventDefault(); submitVerifiedStock();" class="space-y-2.5 pb-2">
     
     <!-- 1. PRODUCT TITLE CARD -->
     <div class="p-3 sm:p-3.5 rounded-2xl bg-[#f0f6ff] border border-blue-100/50">
       <label class="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">PRODUCT TITLE</label>
-      <input type="text" id="reviewName" value="Colgate Strong Teeth Dental Paste" class="w-full bg-transparent border-0 p-0 text-base font-bold text-slate-900 focus:outline-none focus:ring-0">
+      <input type="text" id="reviewName" value="" placeholder="Product title" class="w-full bg-transparent border-0 p-0 text-base font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:outline-none focus:ring-0">
     </div>
 
     <!-- 2. BRAND NAME & CATEGORY (2 COLS) -->
@@ -28,12 +39,12 @@
       <!-- Brand Name -->
       <div class="p-3 sm:p-3.5 rounded-2xl bg-[#f0f6ff] border border-blue-100/50">
         <label class="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">BRAND NAME</label>
-        <input type="text" id="reviewBrand" value="Colgate-Palmolive" class="w-full bg-transparent border-0 p-0 text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:ring-0">
+        <input type="text" id="reviewBrand" value="" placeholder="Brand name" class="w-full bg-transparent border-0 p-0 text-xs sm:text-sm font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:outline-none focus:ring-0">
       </div>
       <!-- Category -->
       <div class="p-3 sm:p-3.5 rounded-2xl bg-[#f0f6ff] border border-blue-100/50">
         <label class="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">CATEGORY</label>
-        <input type="text" id="reviewCategory" value="Oral Care / FMCG" class="w-full bg-transparent border-0 p-0 text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:ring-0">
+        <input type="text" id="reviewCategory" value="" placeholder="Category" class="w-full bg-transparent border-0 p-0 text-xs sm:text-sm font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:outline-none focus:ring-0">
       </div>
     </div>
 
@@ -43,14 +54,14 @@
       <div class="p-3 sm:p-3.5 rounded-2xl bg-[#f0f6ff] border border-blue-100/50">
         <label class="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">EXPIRY DATE</label>
         <div class="flex items-center justify-between">
-          <input type="text" id="reviewExpiry" value="18/11/2026" class="w-full bg-transparent border-0 p-0 text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:ring-0 font-mono">
+          <input type="text" id="reviewExpiry" value="" placeholder="DD/MM/YYYY" class="w-full bg-transparent border-0 p-0 text-xs sm:text-sm font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:outline-none focus:ring-0 font-mono">
           <i data-lucide="calendar" class="w-4 h-4 text-emerald-500 flex-shrink-0"></i>
         </div>
       </div>
       <!-- Batch / Lot No -->
       <div class="p-3 sm:p-3.5 rounded-2xl bg-[#f0f6ff] border border-blue-100/50">
         <label class="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">BATCH / LOT NO</label>
-        <input type="text" id="reviewBatch" value="B-9482X" class="w-full bg-transparent border-0 p-0 text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:ring-0 font-mono">
+        <input type="text" id="reviewBatch" value="" placeholder="Batch / Lot No" class="w-full bg-transparent border-0 p-0 text-xs sm:text-sm font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:outline-none focus:ring-0 font-mono">
       </div>
     </div>
 
@@ -59,14 +70,14 @@
       <!-- Net Wt -->
       <div class="p-3 sm:p-3.5 rounded-2xl bg-[#f0f6ff] border border-blue-100/50">
         <label class="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">NET WT</label>
-        <input type="text" id="reviewNetWeight" value="200g" class="w-full bg-transparent border-0 p-0 text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:ring-0">
+        <input type="text" id="reviewNetWeight" value="" placeholder="e.g. 200g, 1L" class="w-full bg-transparent border-0 p-0 text-xs sm:text-sm font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:outline-none focus:ring-0">
       </div>
       <!-- MRP -->
       <div class="p-3 sm:p-3.5 rounded-2xl bg-[#f0f6ff] border border-blue-100/50">
         <label class="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">MRP (₹)</label>
         <div class="flex items-baseline">
           <span class="text-[#2563eb] font-black text-base sm:text-lg">₹</span>
-          <input type="number" step="0.01" id="reviewMrp" value="120" class="w-full bg-transparent border-0 p-0 text-base sm:text-lg font-black text-[#2563eb] focus:outline-none focus:ring-0 ml-0.5">
+          <input type="number" step="0.01" id="reviewMrp" value="" placeholder="0.00" class="w-full bg-transparent border-0 p-0 text-base sm:text-lg font-black text-[#2563eb] placeholder:text-blue-300 placeholder:font-medium focus:outline-none focus:ring-0 ml-0.5">
         </div>
       </div>
     </div>
@@ -75,7 +86,7 @@
     <div class="p-3 sm:p-3.5 rounded-2xl bg-[#f0f6ff] border border-blue-100/50">
       <label class="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">BARCODE (EAN-13)</label>
       <div class="flex items-center justify-between">
-        <input type="text" id="reviewBarcode" value="8901314010523" class="w-full bg-transparent border-0 p-0 text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:ring-0 font-mono tracking-wide">
+        <input type="text" id="reviewBarcode" value="" placeholder="Barcode digits" class="w-full bg-transparent border-0 p-0 text-xs sm:text-sm font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:outline-none focus:ring-0 font-mono tracking-wide">
         <i data-lucide="barcode" class="w-5 h-5 text-slate-700 flex-shrink-0"></i>
       </div>
     </div>
@@ -87,7 +98,7 @@
         <label class="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1.5">VERIFIED COUNT</label>
         <div class="flex items-center space-x-2">
           <button type="button" onclick="adjustReviewCount(-1)" class="w-9 h-9 rounded-xl bg-blue-100/80 hover:bg-blue-200 active:scale-95 text-blue-900 font-extrabold text-base flex items-center justify-center transition-all">-</button>
-          <span id="reviewQuantityText" class="text-base font-black text-slate-900 w-8 text-center">12</span>
+          <span id="reviewQuantityText" class="text-base font-black text-slate-900 w-8 text-center">1</span>
           <button type="button" onclick="adjustReviewCount(1)" class="w-9 h-9 rounded-xl bg-blue-100/80 hover:bg-blue-200 active:scale-95 text-blue-900 font-extrabold text-base flex items-center justify-center transition-all">+</button>
         </div>
       </div>
@@ -96,7 +107,7 @@
       <div class="flex flex-col items-end">
         <label class="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1.5">SHELF ALLOCATION</label>
         <div class="relative w-full">
-          <input type="text" id="reviewLocation" value="Rack C-04 • A2" class="w-full px-3 py-2 rounded-xl bg-blue-100/80 text-[#2563eb] font-extrabold text-xs text-center border-0 focus:outline-none focus:ring-1 focus:ring-blue-400">
+          <input type="text" id="reviewLocation" value="" placeholder="Shelf / Rack location" class="w-full px-3 py-2 rounded-xl bg-blue-100/80 text-[#2563eb] font-extrabold text-xs text-center border-0 placeholder:text-blue-400 placeholder:font-medium focus:outline-none focus:ring-1 focus:ring-blue-400">
         </div>
       </div>
     </div>

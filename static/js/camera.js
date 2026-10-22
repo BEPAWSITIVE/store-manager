@@ -1,13 +1,15 @@
 /**
- * StoreScan AI - Homepage Camera & Snap-to-Review Controller
+ * StoreScan AI - Homepage Multi-Angle Camera & Analysis Controller
  */
 
 let videoStream = null;
 let currentFacingMode = "environment";
 let isFlashlightOn = false;
+let capturedPhotos = []; // [{ id: number, angle: string, dataUrl: string }]
 
 function initCameraSystem() {
   startCamera();
+  updateThumbnailsTray();
 }
 
 async function startCamera() {
@@ -40,7 +42,7 @@ async function startCamera() {
       if (fallback) fallback.classList.add("hidden");
     }
   } catch (err) {
-    console.warn("Camera access error/fallback active:", err);
+    console.warn("Camera access error, fallback image active:", err);
     if (fallback) fallback.classList.remove("hidden");
   }
 }
@@ -61,154 +63,263 @@ async function toggleFlashlight() {
       showToast(`Torch ${isFlashlightOn ? 'On' : 'Off'}`, "info");
     } else {
       isFlashlightOn = !isFlashlightOn;
-      showToast(`Torch toggled`, "info");
+      showToast("Torch toggled", "info");
     }
   }
 }
 
 function triggerShutterFlash() {
-  playShutterSound();
+  if (typeof playShutterSound === "function") {
+    playShutterSound();
+  }
   const flash = document.getElementById("flashEffectLayer");
   if (flash) {
     flash.classList.remove("active");
     void flash.offsetWidth;
     flash.classList.add("active");
   }
+  if (navigator.vibrate) {
+    try { navigator.vibrate(35); } catch (e) {}
+  }
 }
 
-async function triggerMainCapture() {
-  triggerShutterFlash();
-
-  const statusText = document.getElementById("scanStatusText");
-  if (statusText) statusText.innerText = "Gemini 3.5 Flash Analyzing...";
-
+/**
+ * Capture a photo frame from the camera stream or fallback
+ */
+function grabCurrentFrameBase64() {
   const video = document.getElementById("cameraFeed");
   const canvas = document.createElement("canvas");
 
-  if (video && video.videoWidth) {
+  if (video && video.videoWidth && video.readyState >= 2) {
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
   } else {
     const fallback = document.getElementById("cameraFallbackImg");
-    canvas.width = fallback ? (fallback.naturalWidth || 600) : 600;
+    canvas.width = fallback ? (fallback.naturalWidth || 640) : 640;
     canvas.height = fallback ? (fallback.naturalHeight || 800) : 800;
     const ctx = canvas.getContext("2d");
     if (fallback) ctx.drawImage(fallback, 0, 0, canvas.width, canvas.height);
   }
 
-  const base64Data = canvas.toDataURL("image/jpeg", 0.9);
-
-  try {
-    // 1. Upload captured image
-    const resUpload = await fetch("/api/scanner/upload-angle-base64", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ angle: "front", image_base64: base64Data })
-    });
-    const dataUpload = await resUpload.json();
-
-    if (dataUpload.success) {
-      // 2. Call Gemini 3.5 Flash for multimodal analysis
-      const resAnalysis = await fetch("/api/scanner/analyze-product", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          angles: [{ angle: "front", url: dataUpload.url, path: dataUpload.path }]
-        })
-      });
-      const dataAnalysis = await resAnalysis.json();
-
-      if (dataAnalysis.success && dataAnalysis.analysis) {
-        const p = dataAnalysis.analysis;
-        // Default to Colgate sample if generic/unnamed
-        const reviewData = {
-          name: p.name || "Colgate Strong Teeth Dental Paste",
-          brand: p.brand || "Colgate-Palmolive",
-          category: p.category || "Oral Care / FMCG",
-          expiry_date: p.expiry_date || "18/11/2026",
-          batch_no: p.batch_no || "B-9482X",
-          net_weight: p.net_weight || "200g",
-          mrp: p.mrp || 120.0,
-          barcode: p.barcode || "8901314010523",
-          quantity: 12,
-          location: "Rack C-04 • A2",
-          primary_image: dataUpload.url
-        };
-        sessionStorage.setItem("captured_product_data", JSON.stringify(reviewData));
-        window.location.href = "/review";
-        return;
-      }
-    }
-  } catch (err) {
-    console.warn("Live API analysis error, using verified sample:", err);
-  }
-
-  // Graceful fallback to verified review data
-  const defaultReviewData = {
-    name: "Colgate Strong Teeth Dental Paste",
-    brand: "Colgate-Palmolive",
-    category: "Oral Care / FMCG",
-    expiry_date: "18/11/2026",
-    batch_no: "B-9482X",
-    net_weight: "200g",
-    mrp: 120.0,
-    barcode: "8901314010523",
-    quantity: 12,
-    location: "Rack C-04 • A2",
-    primary_image: "/static/uploads/store_shelf_preview.jpg"
-  };
-  sessionStorage.setItem("captured_product_data", JSON.stringify(defaultReviewData));
-  window.location.href = "/review";
+  return canvas.toDataURL("image/jpeg", 0.9);
 }
 
-function handleHomePhotoUpload(event) {
-  const file = event.target.files[0];
-  if (!file) return;
+/**
+ * Click Shutter Button: Only triggered by explicitly tapping the photo button
+ */
+function clickShutterPhoto() {
+  triggerShutterFlash();
 
-  const reader = new FileReader();
-  reader.onload = async (e) => {
-    triggerShutterFlash();
-    const base64Data = e.target.result;
-    try {
-      const resUpload = await fetch("/api/scanner/upload-angle-base64", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ angle: "front", image_base64: base64Data })
+  const base64Data = grabCurrentFrameBase64();
+  const nextIndex = capturedPhotos.length + 1;
+  
+  let angleLabel = `Angle ${nextIndex}`;
+  if (nextIndex === 1) angleLabel = "Front View";
+  else if (nextIndex === 2) angleLabel = "Back & Details";
+  else if (nextIndex === 3) angleLabel = "Barcode & Expiry";
+  else if (nextIndex === 4) angleLabel = "Shelf / Box View";
+
+  capturedPhotos.push({
+    id: Date.now() + Math.random(),
+    angle: angleLabel,
+    dataUrl: base64Data
+  });
+
+  updateThumbnailsTray();
+  showToast(`Captured ${angleLabel} (${capturedPhotos.length} total)`, "success");
+}
+
+/**
+ * Updates the floating multi-photo gallery tray
+ */
+function updateThumbnailsTray() {
+  const tray = document.getElementById("capturedThumbnailsTray");
+  const list = document.getElementById("thumbnailsList");
+  const countLabel = document.getElementById("capturedCountLabel");
+  const analyzeBtnLabel = document.getElementById("analyzeBtnLabel");
+  const statusText = document.getElementById("cameraStatusText");
+  const clearBtn = document.getElementById("clearPhotosBtn");
+  const navBadge = document.getElementById("centerCaptureCountBadge");
+
+  const count = capturedPhotos.length;
+
+  if (count === 0) {
+    if (tray) tray.classList.add("hidden");
+    if (clearBtn) clearBtn.classList.add("hidden");
+    if (navBadge) navBadge.classList.add("hidden");
+    if (statusText) statusText.innerText = "Point camera & tap shutter button";
+    return;
+  }
+
+  if (tray) tray.classList.remove("hidden");
+  if (clearBtn) clearBtn.classList.remove("hidden");
+  if (navBadge) {
+    navBadge.classList.remove("hidden");
+    navBadge.innerText = count;
+  }
+
+  if (countLabel) {
+    countLabel.innerText = `${count} Angle${count > 1 ? "s" : ""} Captured`;
+  }
+  if (analyzeBtnLabel) {
+    analyzeBtnLabel.innerText = `Analyze & Review (${count} Photo${count > 1 ? "s" : ""})`;
+  }
+  if (statusText) {
+    statusText.innerText = `${count} photo${count > 1 ? "s" : ""} ready • Snap more or tap Review`;
+  }
+
+  if (list) {
+    list.innerHTML = capturedPhotos.map((item, idx) => `
+      <div class="relative flex-shrink-0 group">
+        <img src="${item.dataUrl}" alt="${item.angle}" class="w-14 h-14 object-cover rounded-xl border-2 border-blue-400 shadow-md">
+        <span class="absolute bottom-0 inset-x-0 bg-slate-950/80 text-[8px] font-bold text-white text-center rounded-b-xl py-0.5 truncate px-1">
+          #${idx + 1}
+        </span>
+        <button type="button" onclick="removeCapturedPhoto(${item.id})" class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-600 text-white flex items-center justify-center text-xs font-black shadow-md hover:bg-red-700 active:scale-95 transition-transform" title="Remove angle">
+          ×
+        </button>
+      </div>
+    `).join("");
+  }
+}
+
+/**
+ * Remove a specific angle from captured set
+ */
+function removeCapturedPhoto(id) {
+  capturedPhotos = capturedPhotos.filter(p => p.id !== id);
+  // Re-number labels if needed
+  capturedPhotos.forEach((p, idx) => {
+    if (p.angle.startsWith("Angle ")) {
+      p.angle = `Angle ${idx + 1}`;
+    }
+  });
+  updateThumbnailsTray();
+}
+
+/**
+ * Reset and clear all captured photos
+ */
+function clearAllCapturedPhotos() {
+  capturedPhotos = [];
+  updateThumbnailsTray();
+  showToast("All captured angles cleared", "info");
+}
+
+/**
+ * Handles multiple photo selection via gallery/files
+ */
+function handleMultiPhotoUpload(event) {
+  const files = Array.from(event.target.files || []);
+  if (!files.length) return;
+
+  triggerShutterFlash();
+
+  let loaded = 0;
+  files.forEach((file, index) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      capturedPhotos.push({
+        id: Date.now() + Math.random() + index,
+        angle: `Photo ${capturedPhotos.length + 1}`,
+        dataUrl: e.target.result
       });
-      const dataUpload = await resUpload.json();
-      if (dataUpload.success) {
-        const resAnalysis = await fetch("/api/scanner/analyze-product", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            angles: [{ angle: "front", url: dataUpload.url, path: dataUpload.path }]
-          })
-        });
-        const dataAnalysis = await resAnalysis.json();
-        if (dataAnalysis.success && dataAnalysis.analysis) {
-          const p = dataAnalysis.analysis;
-          sessionStorage.setItem("captured_product_data", JSON.stringify({
-            name: p.name || "Colgate Strong Teeth Dental Paste",
-            brand: p.brand || "Colgate-Palmolive",
-            category: p.category || "Oral Care / FMCG",
-            expiry_date: p.expiry_date || "18/11/2026",
-            batch_no: p.batch_no || "B-9482X",
-            net_weight: p.net_weight || "200g",
-            mrp: p.mrp || 120.0,
-            barcode: p.barcode || "8901314010523",
-            quantity: 12,
-            location: "Rack C-04 • A2",
-            primary_image: dataUpload.url
-          }));
-          window.location.href = "/review";
-          return;
-        }
+      loaded++;
+      if (loaded === files.length) {
+        updateThumbnailsTray();
+        showToast(`Loaded ${files.length} photo(s) from device`, "success");
       }
-    } catch (e) {}
+    };
+    reader.readAsDataURL(file);
+  });
+  // Reset input value so same files can be chosen again
+  event.target.value = "";
+}
 
-    window.location.href = "/review";
+/**
+ * Sends all captured photos to AI for multimodal analysis.
+ * NOTE: Does NOT show the model name like "Gemini 3.5 Flash" during processing!
+ */
+async function submitAllPhotosForAnalysis() {
+  if (capturedPhotos.length === 0) {
+    // If no photos snapped yet, snap the current view as photo 1
+    clickShutterPhoto();
+  }
+
+  const overlay = document.getElementById("analyzingOverlay");
+  const loadingTitle = document.getElementById("analysisLoadingTitle");
+  const loadingSubtitle = document.getElementById("analysisLoadingSubtitle");
+
+  if (overlay) overlay.classList.remove("hidden");
+  if (loadingTitle) loadingTitle.innerText = "Analyzing product photos...";
+  if (loadingSubtitle) loadingSubtitle.innerText = `Extracting details from ${capturedPhotos.length} angle photo(s)...`;
+
+  const payload = {
+    images: capturedPhotos.map(p => ({
+      angle: p.angle,
+      image_base64: p.dataUrl
+    }))
   };
-  reader.readAsDataURL(file);
+
+  try {
+    const response = await fetch("/api/scanner/analyze-batch", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+
+    if (data.success && data.analysis) {
+      const p = data.analysis;
+
+      // Extract ONLY what was actually detected - no fake pre-filled data!
+      const reviewData = {
+        name: p.name || "",
+        brand: p.brand || "",
+        category: p.category || "",
+        expiry_date: p.expiry_date || "",
+        batch_no: p.batch_no || "",
+        net_weight: p.net_weight || "",
+        mrp: (p.mrp && parseFloat(p.mrp) > 0) ? parseFloat(p.mrp) : "",
+        barcode: p.barcode || "",
+        quantity: (p.quantity && parseInt(p.quantity) > 0) ? parseInt(p.quantity) : 1,
+        location: p.location || "",
+        primary_image: data.primary_image || capturedPhotos[0].dataUrl,
+        angle_images: data.angle_images || capturedPhotos.map(cp => cp.dataUrl)
+      };
+
+      sessionStorage.setItem("captured_product_data", JSON.stringify(reviewData));
+      window.location.href = "/review";
+      return;
+    } else {
+      throw new Error(data.detail || "Analysis could not parse images.");
+    }
+  } catch (err) {
+    console.warn("Analysis request error:", err);
+    // Even if error occurs, proceed to review with captured photos and blank form (NO fake data!)
+    const blankReviewData = {
+      name: "",
+      brand: "",
+      category: "",
+      expiry_date: "",
+      batch_no: "",
+      net_weight: "",
+      mrp: "",
+      barcode: "",
+      quantity: 1,
+      location: "",
+      primary_image: capturedPhotos[0] ? capturedPhotos[0].dataUrl : "/static/uploads/store_shelf_preview.jpg",
+      angle_images: capturedPhotos.map(cp => cp.dataUrl)
+    };
+    sessionStorage.setItem("captured_product_data", JSON.stringify(blankReviewData));
+    window.location.href = "/review";
+  }
+}
+
+// Global hook for the center nav capture button
+function triggerMainCapture() {
+  clickShutterPhoto();
 }

@@ -3,34 +3,93 @@
 {% block content %}
 <div class="flex-1 min-h-0 flex flex-col p-3.5 sm:p-4 relative bg-white overflow-hidden">
 
-  <!-- THE HOMEPAGE CAMERA CARD (1:1 Exact Match to Uploaded Screenshot) -->
-  <div class="w-full h-full min-h-0 relative rounded-[28px] sm:rounded-[32px] overflow-hidden shadow-lg border border-slate-100 bg-slate-900 flex flex-col justify-end" id="homeCameraCard">
+  <!-- THE HOMEPAGE CAMERA CARD (Native Camera View) -->
+  <div class="w-full h-full min-h-0 relative rounded-[28px] sm:rounded-[32px] overflow-hidden shadow-lg border border-slate-100 bg-slate-900 flex flex-col justify-between" id="homeCameraCard">
     
-    <!-- Live Camera Video -->
+    <!-- Live Camera Video Stream -->
     <video id="cameraFeed" autoplay playsinline muted class="absolute inset-0 w-full h-full object-cover"></video>
 
-    <!-- Fallback Store Shelf View (Matches Exact Screenshot with Lipton, Colgate, Sprite, Maggi) -->
+    <!-- Fallback Store Shelf View (When camera permissions not granted) -->
     <img id="cameraFallbackImg" src="/static/uploads/store_shelf_preview.jpg" alt="Store Shelf Camera View" class="absolute inset-0 w-full h-full object-cover">
 
     <!-- Flash Effect Layer -->
     <div id="flashEffectLayer" class="flash-effect-layer"></div>
 
-    <!-- Hidden Photo File Input (For Gallery upload) -->
-    <input type="file" id="homePhotoInput" accept="image/*" class="hidden" onchange="handleHomePhotoUpload(event)">
+    <!-- Hidden Multi-Photo File Input (Supports uploading multiple photos from gallery/files) -->
+    <input type="file" id="homePhotoInput" accept="image/*" multiple class="hidden" onchange="handleMultiPhotoUpload(event)">
 
-    <!-- Bottom-Right Floating Torch / Flash Button (Exact Match to Screenshot) -->
-    <button type="button" onclick="toggleFlashlight()" id="homeFlashBtn" class="absolute bottom-4 right-4 z-20 w-11 h-11 rounded-full bg-[#1b2535]/90 hover:bg-[#151e2b] active:scale-95 text-white flex items-center justify-center shadow-xl backdrop-blur-md border border-white/10 transition-all" title="Toggle Flash">
-      <svg class="w-5 h-5 fill-white" viewBox="0 0 24 24">
-        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-      </svg>
-    </button>
-
-    <!-- Interactive Tap-to-Scan Area -->
-    <div id="captureHintOverlay" onclick="triggerMainCapture()" class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/5 hover:bg-black/15 cursor-pointer transition-all">
-      <div id="scanStatusBadge" class="px-3.5 py-1.5 rounded-full bg-slate-900/75 backdrop-blur-md border border-white/10 text-white text-[11px] font-bold shadow-xl flex items-center space-x-2">
+    <!-- Top Status / Angles Counter Pill -->
+    <div class="relative z-20 pt-3 px-3 flex items-center justify-between pointer-events-none">
+      <div id="cameraStatusPill" class="px-3 py-1.5 rounded-full bg-slate-900/80 backdrop-blur-md border border-white/15 text-white text-[11px] font-bold shadow-xl flex items-center space-x-2 pointer-events-auto">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span id="scanStatusText">Tap Card to Scan</span>
+        <span id="cameraStatusText">Point camera & tap shutter button</span>
       </div>
+
+      <!-- Quick Reset / Clear button (only visible when photos exist) -->
+      <button type="button" onclick="clearAllCapturedPhotos()" id="clearPhotosBtn" class="hidden px-2.5 py-1 rounded-full bg-red-500/80 hover:bg-red-600 text-white text-[10px] font-bold shadow-lg backdrop-blur-md pointer-events-auto transition-all">
+        Reset
+      </button>
+    </div>
+
+    <!-- Bottom Controls & Captured Angles Tray -->
+    <div class="relative z-20 pb-3 px-3.5 flex flex-col space-y-2 pointer-events-auto">
+
+      <!-- Multi-Photo Thumbnails Tray (Appears dynamically when photos are taken) -->
+      <div id="capturedThumbnailsTray" class="hidden p-2.5 rounded-2xl bg-slate-950/85 backdrop-blur-md border border-white/15 shadow-2xl flex flex-col space-y-2">
+        <div class="flex items-center justify-between text-white text-[11px] font-bold px-1">
+          <span class="flex items-center space-x-1.5">
+            <i data-lucide="layers" class="w-3.5 h-3.5 text-blue-400"></i>
+            <span id="capturedCountLabel">0 Angles Captured</span>
+          </span>
+          <span class="text-[10px] text-slate-300 font-medium">Click shutter to add more</span>
+        </div>
+
+        <!-- Scrollable Thumbnails List -->
+        <div id="thumbnailsList" class="flex items-center space-x-2 overflow-x-auto py-1 scrollbar-none">
+          <!-- Populated dynamically via camera.js -->
+        </div>
+
+        <!-- Primary CTA to Send All Photos to AI -->
+        <button type="button" onclick="submitAllPhotosForAnalysis()" id="analyzeAllBtn" class="w-full py-2.5 px-4 rounded-xl bg-[#2563eb] hover:bg-blue-600 active:scale-98 text-white font-extrabold text-xs flex items-center justify-center space-x-2 shadow-lg shadow-blue-500/30 transition-all">
+          <span id="analyzeBtnLabel">Analyze & Review Photos</span>
+          <i data-lucide="arrow-right" class="w-4 h-4 stroke-[2.5]"></i>
+        </button>
+      </div>
+
+      <!-- Bottom Floating Action Bar (Gallery Upload + Torch Toggle) -->
+      <div class="flex items-center justify-between w-full">
+        <!-- Gallery / File Upload Button -->
+        <button type="button" onclick="document.getElementById('homePhotoInput').click()" class="w-10 h-10 rounded-full bg-slate-900/80 hover:bg-slate-900 active:scale-95 text-white flex items-center justify-center shadow-xl backdrop-blur-md border border-white/10 transition-all" title="Upload Photos from Gallery">
+          <i data-lucide="image-plus" class="w-4.5 h-4.5"></i>
+        </button>
+
+        <!-- In-Card Shutter Button (Allows clicking right on screen) -->
+        <button type="button" onclick="clickShutterPhoto()" class="w-13 h-13 rounded-full bg-white/20 p-1 border-2 border-white/80 active:scale-95 transition-transform flex items-center justify-center shadow-2xl" title="Click Photo">
+          <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-md">
+            <div class="w-8 h-8 rounded-full border border-slate-300 bg-slate-50"></div>
+          </div>
+        </button>
+
+        <!-- Torch / Flash Toggle Button -->
+        <button type="button" onclick="toggleFlashlight()" id="homeFlashBtn" class="w-10 h-10 rounded-full bg-slate-900/80 hover:bg-slate-900 active:scale-95 text-white flex items-center justify-center shadow-xl backdrop-blur-md border border-white/10 transition-all" title="Toggle Flash">
+          <svg class="w-4.5 h-4.5 fill-white" viewBox="0 0 24 24">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+          </svg>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Analyzing / Processing Loading Overlay (Clean: NO model names shown) -->
+    <div id="analyzingOverlay" class="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-md hidden text-white px-6 text-center">
+      <div class="relative mb-4">
+        <div class="w-14 h-14 rounded-full border-4 border-blue-500/30 border-t-[#2563eb] animate-spin"></div>
+        <div class="absolute inset-0 flex items-center justify-center">
+          <i data-lucide="scan" class="w-6 h-6 text-blue-400"></i>
+        </div>
+      </div>
+      <h3 id="analysisLoadingTitle" class="text-base font-extrabold text-white tracking-tight mb-1">Analyzing product photos...</h3>
+      <p id="analysisLoadingSubtitle" class="text-xs text-slate-300 font-medium">Extracting packaging details, barcode & count</p>
     </div>
 
   </div>

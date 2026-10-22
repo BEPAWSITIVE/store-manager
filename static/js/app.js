@@ -159,3 +159,15 @@ async function saveGeminiApiKey() {
     if (btn) btn.disabled = false;
   }
 }
+
+function handleCenterCaptureClick() {
+  if (typeof clickShutterPhoto === 'function') {
+    clickShutterPhoto();
+  } else {
+    window.location.href = '/';
+  }
+}
+
+function triggerMainCapture() {
+  handleCenterCaptureClick();
+}

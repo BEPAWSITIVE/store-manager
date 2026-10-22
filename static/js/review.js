@@ -2,35 +2,96 @@
  * StoreScan AI - Product & Inventory Review Controller
  */
 
-let currentQuantity = 12;
+let currentQuantity = 1;
 
 function initReviewPage() {
-  // Load data from session storage if available
   const stored = sessionStorage.getItem("captured_product_data");
   if (stored) {
     try {
       const data = JSON.parse(stored);
-      if (data.name) document.getElementById("reviewName").value = data.name;
-      if (data.brand) document.getElementById("reviewBrand").value = data.brand;
-      if (data.category) document.getElementById("reviewCategory").value = data.category;
-      if (data.expiry_date) document.getElementById("reviewExpiry").value = data.expiry_date;
-      if (data.batch_no) document.getElementById("reviewBatch").value = data.batch_no;
-      if (data.net_weight) document.getElementById("reviewNetWeight").value = data.net_weight;
-      if (data.mrp) document.getElementById("reviewMrp").value = data.mrp;
-      if (data.barcode) document.getElementById("reviewBarcode").value = data.barcode;
-      if (data.quantity) {
-        currentQuantity = parseInt(data.quantity) || 12;
-        updateQuantityDisplay();
+
+      // Only populate fields that were actually detected - leave others blank
+      document.getElementById("reviewName").value = data.name || "";
+      document.getElementById("reviewBrand").value = data.brand || "";
+      document.getElementById("reviewCategory").value = data.category || "";
+      document.getElementById("reviewExpiry").value = data.expiry_date || "";
+      document.getElementById("reviewBatch").value = data.batch_no || "";
+      document.getElementById("reviewNetWeight").value = data.net_weight || "";
+      
+      const mrpInput = document.getElementById("reviewMrp");
+      if (data.mrp !== undefined && data.mrp !== null && data.mrp !== "" && parseFloat(data.mrp) > 0) {
+        mrpInput.value = data.mrp;
+      } else {
+        mrpInput.value = "";
       }
-      if (data.location) document.getElementById("reviewLocation").value = data.location;
+
+      document.getElementById("reviewBarcode").value = data.barcode || "";
+      document.getElementById("reviewLocation").value = data.location || "";
+
+      if (data.quantity && parseInt(data.quantity) > 0) {
+        currentQuantity = parseInt(data.quantity);
+      } else {
+        currentQuantity = 1;
+      }
+      updateQuantityDisplay();
+
+      // Render the photos clicked by the user
+      renderCapturedPhotos(data);
+
     } catch (e) {
       console.warn("Could not parse stored captured product data", e);
+      resetReviewForm();
     }
+  } else {
+    resetReviewForm();
   }
 }
 
+function resetReviewForm() {
+  document.getElementById("reviewName").value = "";
+  document.getElementById("reviewBrand").value = "";
+  document.getElementById("reviewCategory").value = "";
+  document.getElementById("reviewExpiry").value = "";
+  document.getElementById("reviewBatch").value = "";
+  document.getElementById("reviewNetWeight").value = "";
+  document.getElementById("reviewMrp").value = "";
+  document.getElementById("reviewBarcode").value = "";
+  document.getElementById("reviewLocation").value = "";
+  currentQuantity = 1;
+  updateQuantityDisplay();
+}
+
+function renderCapturedPhotos(data) {
+  const container = document.getElementById("reviewPhotosContainer");
+  const strip = document.getElementById("reviewPhotosStrip");
+  const countBadge = document.getElementById("reviewAngleCountBadge");
+
+  let photos = [];
+  if (Array.isArray(data.angle_images) && data.angle_images.length > 0) {
+    photos = data.angle_images;
+  } else if (data.primary_image) {
+    photos = [data.primary_image];
+  }
+
+  if (!photos.length || !container || !strip) return;
+
+  container.classList.remove("hidden");
+  if (countBadge) {
+    countBadge.innerText = `${photos.length} Photo${photos.length > 1 ? "s" : ""}`;
+  }
+
+  strip.innerHTML = photos.map((imgSrc, idx) => `
+    <div class="relative flex-shrink-0">
+      <img src="${imgSrc}" alt="Angle ${idx + 1}" class="w-16 h-16 object-cover rounded-xl border border-blue-200 shadow-sm">
+      <span class="absolute bottom-0 inset-x-0 bg-slate-900/80 text-[8px] font-bold text-white text-center rounded-b-xl py-0.5">
+        Angle ${idx + 1}
+      </span>
+    </div>
+  `).join("");
+}
+
 function adjustReviewCount(delta) {
-  currentQuantity = Math.max(0, currentQuantity + delta);
+  currentQuantity = Math.max(1, currentQuantity + delta);
   updateQuantityDisplay();
 }
 
@@ -49,24 +110,34 @@ async function submitVerifiedStock() {
     `;
   }
 
-  const name = document.getElementById("reviewName").value.trim() || "Colgate Strong Teeth Dental Paste";
-  const brand = document.getElementById("reviewBrand").value.trim() || "Colgate-Palmolive";
-  const category = document.getElementById("reviewCategory").value.trim() || "Oral Care / FMCG";
-  const expiry = document.getElementById("reviewExpiry").value.trim() || "18/11/2026";
-  const batch = document.getElementById("reviewBatch").value.trim() || "B-9482X";
-  const netWeight = document.getElementById("reviewNetWeight").value.trim() || "200g";
-  const mrp = parseFloat(document.getElementById("reviewMrp").value) || 120.0;
-  const barcode = document.getElementById("reviewBarcode").value.trim() || "8901314010523";
-  const location = document.getElementById("reviewLocation").value.trim() || "Rack C-04 • A2";
+  const name = document.getElementById("reviewName").value.trim() || "Scanned Retail Product";
+  const brand = document.getElementById("reviewBrand").value.trim();
+  const category = document.getElementById("reviewCategory").value.trim() || "General";
+  const expiry = document.getElementById("reviewExpiry").value.trim();
+  const batch = document.getElementById("reviewBatch").value.trim();
+  const netWeight = document.getElementById("reviewNetWeight").value.trim();
+  const mrpVal = parseFloat(document.getElementById("reviewMrp").value);
+  const mrp = (!isNaN(mrpVal) && mrpVal > 0) ? mrpVal : 0.0;
+  const barcode = document.getElementById("reviewBarcode").value.trim();
+  const location = document.getElementById("reviewLocation").value.trim() || "Main Shelf";
 
   // Retain image from session if present
-  let primaryImage = "/static/uploads/store_shelf_preview.jpg";
+  let primaryImage = "";
+  let angleImages = [];
   const stored = sessionStorage.getItem("captured_product_data");
   if (stored) {
     try {
       const data = JSON.parse(stored);
       if (data.primary_image) primaryImage = data.primary_image;
+      if (Array.isArray(data.angle_images)) angleImages = data.angle_images;
     } catch (e) {}
+  }
+
+  if (!primaryImage && angleImages.length > 0) {
+    primaryImage = angleImages[0];
+  }
+  if (!primaryImage) {
+    primaryImage = "/static/uploads/store_shelf_preview.jpg";
   }
 
   const payload = {
@@ -76,18 +147,18 @@ async function submitVerifiedStock() {
     barcode: barcode,
     net_weight: netWeight,
     mrp: mrp,
-    cost_price: mrp * 0.75,
+    cost_price: mrp > 0 ? mrp * 0.75 : 0.0,
     quantity: currentQuantity,
     min_stock_alert: 5,
     location: location,
     expiry_date: expiry,
     batch_no: batch,
     primary_image: primaryImage,
-    angle_images: [primaryImage],
+    angle_images: angleImages.length ? angleImages : [primaryImage],
     rack_image: "",
     rack_box_count: currentQuantity,
     ai_confidence: 0.98,
-    ai_summary: "Verified via Store Manager Review Page"
+    ai_summary: "Verified and cataloged into Stock Manager"
   };
 
   try {
