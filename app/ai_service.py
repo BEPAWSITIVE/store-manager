@@ -9,7 +9,7 @@ from app.config import get_gemini_api_key, get_gemini_model, APP_MODE
 from app.utils import (
     load_image_for_gemini,
     annotate_counted_boxes,
-    fallback_cv_count_boxes
+    fallback_demo_count_boxes
 )
 
 def clean_json_response(text: str) -> Dict[str, Any]:
@@ -150,13 +150,13 @@ Return ONLY a valid JSON object matching this schema:
 
 def count_rack_boxes_ai(image_path: Path) -> Dict[str, Any]:
     """
-    Counts boxes, cartons, or units on a shelf/rack using Gemini Multimodal (gemini-3.5-flash) or CV fallback.
+    Counts boxes, cartons, or units on a shelf/rack using Gemini Multimodal (gemini-3.5-flash).
     Draws highlighted bounding boxes and returns count + annotated image.
     """
     api_key = get_gemini_api_key()
     
     if not api_key:
-        count, boxes = fallback_cv_count_boxes(image_path)
+        count, boxes = fallback_demo_count_boxes(image_path)
         annotated_url, _ = annotate_counted_boxes(image_path, boxes, count)
         return {
             "count": count,
@@ -165,7 +165,7 @@ def count_rack_boxes_ai(image_path: Path) -> Dict[str, Any]:
             "confidence": 0.90,
             "notes": f"Detected {count} boxes on rack using visual pattern analysis (Demo mode).",
             "is_ai_live": False,
-            "model_used": "CV-Heuristic"
+            "model_used": "Demo-Mode"
         }
 
     try:
@@ -216,7 +216,7 @@ Return ONLY a valid JSON object matching this schema:
                 boxes = result.get("boxes", [])
 
                 if count <= 0 or not boxes:
-                    count, boxes = fallback_cv_count_boxes(image_path)
+                    count, boxes = fallback_demo_count_boxes(image_path)
 
                 annotated_url, _ = annotate_counted_boxes(image_path, boxes, count)
 
@@ -225,7 +225,7 @@ Return ONLY a valid JSON object matching this schema:
                     "boxes": boxes,
                     "annotated_image_url": annotated_url,
                     "confidence": 0.96,
-                    "notes": result.get("notes", f"Successfully identified {count} units on the rack."),
+                    "notes": result.get("notes", f"Successfully identified {count} units on the rack with Gemini 3.5 Flash."),
                     "is_ai_live": True,
                     "model_used": model_name
                 }
@@ -238,16 +238,16 @@ Return ONLY a valid JSON object matching this schema:
 
     except Exception as e:
         print(f"[AI Service Error - Rack Counting] {e}")
-        count, boxes = fallback_cv_count_boxes(image_path)
+        count, boxes = fallback_demo_count_boxes(image_path)
         annotated_url, _ = annotate_counted_boxes(image_path, boxes, count)
         return {
             "count": count,
             "boxes": boxes,
             "annotated_image_url": annotated_url,
             "confidence": 0.88,
-            "notes": f"Counted {count} boxes using computer vision fallback.",
+            "notes": f"Counted {count} boxes (Demo mode).",
             "is_ai_live": False,
-            "model_used": "CV-Fallback"
+            "model_used": "Demo-Mode"
         }
 
 def get_mock_product_analysis(images: List[Dict[str, Any]]) -> Dict[str, Any]:

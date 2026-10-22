@@ -131,10 +131,10 @@ def annotate_counted_boxes(image_path: Path, boxes: List[Dict[str, Any]], count:
     
     return f"/static/uploads/{output_filename}", output_filepath
 
-def fallback_cv_count_boxes(image_path: Path) -> Tuple[int, List[Dict[str, Any]]]:
+def fallback_demo_count_boxes(image_path: Path) -> Tuple[int, List[Dict[str, Any]]]:
     """
-    Pure-Python fallback using Pillow and NumPy to count boxes/shelved items.
-    Does NOT depend on OpenCV / cv2 / libxcb, ensuring 100% serverless Vercel compatibility.
+    Demo fallback using Pillow when no Gemini API key is supplied.
+    Zero OpenCV dependency.
     """
     try:
         pil_img = Image.open(image_path)
@@ -162,5 +162,5 @@ def fallback_cv_count_boxes(image_path: Path) -> Tuple[int, List[Dict[str, Any]]
                 })
         return len(boxes), boxes
     except Exception as e:
-        print(f"[Fallback Box Counter Notice] {e}")
+        print(f"[Demo Fallback Notice] {e}")
         return 12, []
