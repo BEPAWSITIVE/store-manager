@@ -37,15 +37,15 @@
   <!-- Custom Mobile-First CSS -->
   <link rel="stylesheet" href="/static/css/style.css">
 </head>
-<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col items-center justify-start overflow-x-hidden select-none">
+<body class="bg-slate-100 text-slate-800 antialiased flex flex-col items-center justify-center select-none overflow-hidden">
 
-  <!-- Mobile View Container: Edge-to-edge on mobile, sleek phone mockup on desktop -->
-  <div class="w-full max-w-md min-h-screen sm:min-h-[890px] sm:my-4 sm:rounded-[40px] sm:shadow-2xl sm:border-[8px] sm:border-slate-800/90 bg-white flex flex-col relative overflow-hidden">
+  <!-- Mobile View Container: Edge-to-edge on mobile devices (100dvh), sleek phone frame on desktop -->
+  <div class="app-screen-container max-w-[420px] relative">
 
     <!-- Top Header (Exact Match to Screenshot) -->
-    <header class="w-full px-5 pt-4 pb-3 bg-white flex items-center justify-between z-30 flex-shrink-0 border-b border-slate-50">
+    <header class="w-full px-5 pt-3.5 pb-2.5 bg-white flex items-center justify-between z-30 flex-shrink-0">
       <!-- Left: Store Icon & Store Manager Title -->
-      <a href="/" class="flex items-center space-x-2.5 group">
+      <a href="/" class="flex items-center space-x-2 group">
         <i data-lucide="store" class="w-6 h-6 text-[#2563eb] stroke-[2.2]"></i>
         <span class="text-xl font-extrabold text-slate-900 tracking-tight">Store Manager</span>
       </a>
@@ -59,38 +59,38 @@
         </button>
 
         <!-- Profile Pill (Blue Circle with User Icon & BM) -->
-        <button type="button" onclick="openSettingsModal()" class="flex items-center bg-[#2563eb] text-white pl-2 pr-2.5 py-1.5 rounded-full hover:bg-blue-700 transition-colors shadow-sm space-x-1.5" title="Settings / Model">
+        <button type="button" onclick="openSettingsModal()" class="flex items-center bg-[#0d59e8] text-white pl-2 pr-2.5 py-1.5 rounded-full hover:bg-blue-700 transition-colors shadow-sm space-x-1.5" title="Settings / Model">
           <div class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
             <i data-lucide="user" class="w-3.5 h-3.5 text-white"></i>
           </div>
-          <span class="font-extrabold text-xs tracking-wide">BM</span>
+          <span class="font-extrabold text-xs tracking-wider">BM</span>
         </button>
       </div>
     </header>
 
-    <!-- Main Content Area -->
-    <main class="flex-1 flex flex-col relative overflow-y-auto bg-white">
+    <!-- Main Content Area (Fills exact available middle height without scrolling) -->
+    <main class="flex-1 min-h-0 flex flex-col relative overflow-hidden bg-white">
       {% block content %}{% endblock %}
     </main>
 
     <!-- Bottom Navigation Bar (Exact Match to Screenshot) -->
-    <nav class="w-full bg-white border-t border-slate-100 px-4 pt-2 pb-2 flex items-center justify-between z-30 flex-shrink-0 relative">
+    <nav class="w-full bg-white border-t border-slate-100 px-4 pt-1.5 pb-2 flex items-center justify-between z-30 flex-shrink-0 relative">
       <!-- 1. Home -->
       <a href="/" class="flex flex-col items-center justify-center py-1 w-14 {% if active_tab == 'scanner' %} text-[#2563eb] font-bold {% else %} text-slate-600 hover:text-slate-900 {% endif %}">
-        <i data-lucide="home" class="w-5 h-5 mb-1 stroke-[2.2]"></i>
+        <i data-lucide="home" class="w-5 h-5 mb-0.5 stroke-[2.2]"></i>
         <span class="text-[10px]">Home</span>
       </a>
 
       <!-- 2. Stock -->
       <a href="/inventory" class="flex flex-col items-center justify-center py-1 w-14 {% if active_tab == 'inventory' %} text-[#2563eb] font-bold {% else %} text-slate-600 hover:text-slate-900 {% endif %}">
-        <i data-lucide="archive" class="w-5 h-5 mb-1 stroke-[2]"></i>
+        <i data-lucide="archive" class="w-5 h-5 mb-0.5 stroke-[2]"></i>
         <span class="text-[10px]">Stock</span>
       </a>
 
-      <!-- 3. Center Camera Button (White Elevated Circle with Blue Inner Camera) -->
+      <!-- 3. Center Camera Button (Elevated Circle with Blue Inner Camera) -->
       <div class="flex flex-col items-center -mt-7">
-        <button type="button" onclick="triggerMainCapture()" id="centerCaptureBtn" class="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-xl shadow-slate-900/15 border-2 border-slate-100 active:scale-95 transition-transform" title="Capture & Analyze">
-          <div class="w-11 h-11 rounded-full bg-[#2563eb] text-white flex items-center justify-center shadow-md shadow-blue-500/30">
+        <button type="button" onclick="triggerMainCapture()" id="centerCaptureBtn" class="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-lg shadow-slate-900/10 active:scale-95 transition-transform border border-slate-100/60 p-1" title="Capture & Analyze">
+          <div class="w-12 h-12 rounded-full bg-[#2563eb] text-white flex items-center justify-center shadow-md shadow-blue-500/30">
             <i data-lucide="camera" class="w-5 h-5 stroke-[2.2]"></i>
           </div>
         </button>
@@ -98,13 +98,13 @@
 
       <!-- 4. Reports -->
       <button type="button" onclick="openReportsModal()" class="flex flex-col items-center justify-center py-1 w-14 text-slate-600 hover:text-slate-900">
-        <i data-lucide="bar-chart-2" class="w-5 h-5 mb-1 stroke-[2]"></i>
+        <i data-lucide="bar-chart-2" class="w-5 h-5 mb-0.5 stroke-[2]"></i>
         <span class="text-[10px]">Reports</span>
       </button>
 
       <!-- 5. More (Three Dots) -->
       <button type="button" onclick="openSettingsModal()" class="flex flex-col items-center justify-center py-1 w-14 text-slate-600 hover:text-slate-900">
-        <i data-lucide="more-horizontal" class="w-5 h-5 mb-1 stroke-[2]"></i>
+        <i data-lucide="more-horizontal" class="w-5 h-5 mb-0.5 stroke-[2]"></i>
         <span class="text-[10px]">More</span>
       </button>
     </nav>

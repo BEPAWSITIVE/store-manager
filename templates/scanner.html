@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="flex-1 flex flex-col justify-between p-4 sm:p-5 relative bg-white">
+<div class="flex-1 min-h-0 flex flex-col p-3.5 sm:p-4 relative bg-white overflow-hidden">
 
-  <!-- THE HOMEPAGE CAMERA CARD (Exact Match to Left Screenshot) -->
-  <div class="w-full relative rounded-[32px] overflow-hidden shadow-xl border border-slate-100 bg-slate-900 flex-1 flex flex-col justify-end min-h-[500px] sm:min-h-[580px] max-h-[660px]" id="homeCameraCard">
+  <!-- THE HOMEPAGE CAMERA CARD (1:1 Exact Match to Uploaded Screenshot) -->
+  <div class="w-full h-full min-h-0 relative rounded-[28px] sm:rounded-[32px] overflow-hidden shadow-lg border border-slate-100 bg-slate-900 flex flex-col justify-end" id="homeCameraCard">
     
     <!-- Live Camera Video -->
     <video id="cameraFeed" autoplay playsinline muted class="absolute inset-0 w-full h-full object-cover"></video>
 
-    <!-- Fallback / Initial Store Shelf Preview (Matches Screenshot) -->
+    <!-- Fallback Store Shelf View (Matches Exact Screenshot with Lipton, Colgate, Sprite, Maggi) -->
     <img id="cameraFallbackImg" src="/static/uploads/store_shelf_preview.jpg" alt="Store Shelf Camera View" class="absolute inset-0 w-full h-full object-cover">
 
     <!-- Flash Effect Layer -->
@@ -19,15 +19,17 @@
     <input type="file" id="homePhotoInput" accept="image/*" class="hidden" onchange="handleHomePhotoUpload(event)">
 
     <!-- Bottom-Right Floating Torch / Flash Button (Exact Match to Screenshot) -->
-    <button type="button" onclick="toggleFlashlight()" id="homeFlashBtn" class="absolute bottom-5 right-5 z-20 w-12 h-12 rounded-full bg-slate-900/85 hover:bg-slate-900 active:scale-95 text-white flex items-center justify-center shadow-2xl backdrop-blur-md border border-white/15 transition-all" title="Toggle Flash">
-      <i data-lucide="zap" class="w-5 h-5"></i>
+    <button type="button" onclick="toggleFlashlight()" id="homeFlashBtn" class="absolute bottom-4 right-4 z-20 w-11 h-11 rounded-full bg-[#1b2535]/90 hover:bg-[#151e2b] active:scale-95 text-white flex items-center justify-center shadow-xl backdrop-blur-md border border-white/10 transition-all" title="Toggle Flash">
+      <svg class="w-5 h-5 fill-white" viewBox="0 0 24 24">
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+      </svg>
     </button>
 
-    <!-- Center Floating Tap-to-Scan Hint (Appears on Hover / Tap) -->
-    <div id="captureHintOverlay" onclick="triggerMainCapture()" class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/15 hover:bg-black/25 cursor-pointer transition-all">
-      <div id="scanStatusBadge" class="px-4 py-2 rounded-2xl bg-slate-900/80 backdrop-blur-md border border-white/15 text-white text-xs font-bold shadow-2xl flex items-center space-x-2">
-        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span id="scanStatusText">Tap or Click Camera to Analyze</span>
+    <!-- Interactive Tap-to-Scan Area -->
+    <div id="captureHintOverlay" onclick="triggerMainCapture()" class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/5 hover:bg-black/15 cursor-pointer transition-all">
+      <div id="scanStatusBadge" class="px-3.5 py-1.5 rounded-full bg-slate-900/75 backdrop-blur-md border border-white/10 text-white text-[11px] font-bold shadow-xl flex items-center space-x-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span id="scanStatusText">Tap Card to Scan</span>
       </div>
     </div>
 

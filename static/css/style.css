@@ -9,112 +9,37 @@
   --dark-navy: #0f2438;
 }
 
-body {
+html, body {
+  height: 100%;
+  height: 100dvh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', "Segoe UI", Roboto, sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
 
-/* =========================================================
-   CAMERA CARD & FRAMING RETICLE
-   ========================================================= */
-
-.mobile-camera-card {
-  position: relative;
-  width: calc(100% - 1.5rem);
-  margin-left: auto;
-  margin-right: auto;
-  height: calc(100vh - 165px);
-  min-height: 520px;
-  max-height: 780px;
-  border-radius: 28px;
+/* Container responsive adjustments */
+.app-screen-container {
+  height: 100%;
+  height: 100dvh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
-  background-color: #0b1320;
-  box-shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.25);
+  background-color: #ffffff;
 }
 
-#cameraFeed {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  position: absolute;
-  inset: 0;
-}
-
-.camera-preview-fallback {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  position: absolute;
-  inset: 0;
-}
-
-/* Corner Reticles (White Framing Corners) */
-.corner-reticle {
-  position: absolute;
-  width: 32px;
-  height: 32px;
-  border-color: rgba(255, 255, 255, 0.85);
-  border-style: solid;
-  border-width: 0;
-  pointer-events: none;
-}
-
-.corner-reticle-tl {
-  top: 18px;
-  left: 18px;
-  border-top-width: 2.5px;
-  border-left-width: 2.5px;
-  border-top-left-radius: 12px;
-}
-
-.corner-reticle-tr {
-  top: 18px;
-  right: 18px;
-  border-top-width: 2.5px;
-  border-right-width: 2.5px;
-  border-top-right-radius: 12px;
-}
-
-.corner-reticle-bl {
-  bottom: 96px;
-  left: 18px;
-  border-bottom-width: 2.5px;
-  border-left-width: 2.5px;
-  border-bottom-left-radius: 12px;
-}
-
-.corner-reticle-br {
-  bottom: 96px;
-  right: 18px;
-  border-bottom-width: 2.5px;
-  border-right-width: 2.5px;
-  border-bottom-right-radius: 12px;
-}
-
-/* Centered Floating HUD Tooltip */
-.camera-status-pill {
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-  animation: fadeInDown 0.4s ease-out;
-}
-
-@keyframes fadeInDown {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -10px);
+@media (min-width: 640px) {
+  .app-screen-container {
+    height: 92vh;
+    height: 92dvh;
+    max-height: 860px;
+    margin: auto;
+    border-radius: 40px;
+    box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.35);
+    border: 8px solid rgba(15, 23, 42, 0.9);
   }
-  to {
-    opacity: 1;
-    transform: translate(-50%, 0);
-  }
-}
-
-/* Floating Bottom Camera Control Capsule */
-.camera-actions-capsule {
-  background: rgba(15, 36, 56, 0.78);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
 }
 
 /* Flash overlay */
@@ -134,57 +59,6 @@ body {
   100% { opacity: 0; }
 }
 
-/* =========================================================
-   BOTTOM SHEET DRAWER (NATIVE MOBILE SHEET)
-   ========================================================= */
-
-.bottom-sheet-drawer {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  max-height: 85%;
-  background: #ffffff;
-  border-top-left-radius: 28px;
-  border-top-right-radius: 28px;
-  box-shadow: 0 -12px 40px rgba(15, 23, 42, 0.35);
-  transform: translateY(105%);
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-  z-index: 45;
-  display: flex;
-  flex-col;
-  overflow: hidden;
-}
-
-.bottom-sheet-drawer.open {
-  transform: translateY(0%);
-}
-
-.drawer-scroller {
-  overflow-y: auto;
-  max-height: calc(85vh - 70px);
-  padding: 0 1.25rem 2rem 1.25rem;
-}
-
-/* Pull Bar Handle */
-.drawer-handle {
-  width: 44px;
-  height: 4.5px;
-  background-color: #cbd5e1;
-  border-radius: 9999px;
-  margin: 10px auto 14px auto;
-  cursor: grab;
-}
-
-/* Shutter Button ring animation */
-.shutter-ring {
-  box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
-  transition: transform 0.12s ease;
-}
-.shutter-ring:active {
-  transform: scale(0.9);
-}
-
 /* Custom Scrollbars */
 ::-webkit-scrollbar {
   width: 4px;
@@ -193,3 +67,4 @@ body {
   background: #cbd5e1;
   border-radius: 4px;
 }
+
