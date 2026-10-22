@@ -101,6 +101,21 @@ async def scanner_page(request: Request):
         }
     )
 
+@app.get("/review", response_class=HTMLResponse)
+async def review_page(request: Request):
+    """Product & Inventory Review page with captured details."""
+    return templates.TemplateResponse(
+        request=request,
+        name="review.html",
+        context={
+            "page_title": "Product & Inventory Review",
+            "active_tab": "scanner",
+            "has_api_key": bool(get_gemini_api_key()),
+            "gemini_model": get_gemini_model(),
+            "app_mode": APP_MODE
+        }
+    )
+
 @app.get("/inventory", response_class=HTMLResponse)
 async def inventory_page(request: Request):
     """Stock Manager dashboard page."""

@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex-1 flex flex-col px-5 py-4 space-y-3.5 overflow-y-auto bg-white">
+
+  <!-- Header Section (Exact Match to Right Screenshot) -->
+  <div class="flex items-start justify-between pb-1">
+    <div>
+      <h2 class="text-xl font-extrabold text-slate-900 tracking-tight leading-snug">Product & Inventory Review</h2>
+      <p class="text-xs text-slate-500 font-medium mt-0.5">Verify detected retail attributes</p>
+    </div>
+    <button type="button" onclick="openSettingsModal()" class="p-1.5 text-slate-700 hover:text-slate-900" title="Settings">
+      <i data-lucide="sliders-horizontal" class="w-5 h-5 stroke-[2]"></i>
+    </button>
+  </div>
+
+  <!-- Review Form Cards -->
+  <form id="reviewForm" onsubmit="event.preventDefault(); submitVerifiedStock();" class="space-y-2.5">
+    
+    <!-- 1. PRODUCT TITLE CARD -->
+    <div class="p-3.5 sm:p-4 rounded-2xl bg-[#f0f6ff] border border-blue-100/50">
+      <label class="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">PRODUCT TITLE</label>
+      <input type="text" id="reviewName" value="Colgate Strong Teeth Dental Paste" class="w-full bg-transparent border-0 p-0 text-base font-bold text-slate-900 focus:outline-none focus:ring-0">
+    </div>
+
+    <!-- 2. BRAND NAME & CATEGORY (2 COLS) -->
+    <div class="grid grid-cols-2 gap-2.5">
+      <!-- Brand Name -->
+      <div class="p-3.5 sm:p-4 rounded-2xl bg-[#f0f6ff] border border-blue-100/50">
+        <label class="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">BRAND NAME</label>
+        <input type="text" id="reviewBrand" value="Colgate-Palmolive" class="w-full bg-transparent border-0 p-0 text-sm font-bold text-slate-900 focus:outline-none focus:ring-0">
+      </div>
+      <!-- Category -->
+      <div class="p-3.5 sm:p-4 rounded-2xl bg-[#f0f6ff] border border-blue-100/50">
+        <label class="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">CATEGORY</label>
+        <input type="text" id="reviewCategory" value="Oral Care / FMCG" class="w-full bg-transparent border-0 p-0 text-sm font-bold text-slate-900 focus:outline-none focus:ring-0">
+      </div>
+    </div>
+
+    <!-- 3. EXPIRY DATE & BATCH / LOT NO (2 COLS) -->
+    <div class="grid grid-cols-2 gap-2.5">
+      <!-- Expiry Date -->
+      <div class="p-3.5 sm:p-4 rounded-2xl bg-[#f0f6ff] border border-blue-100/50">
+        <label class="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">EXPIRY DATE</label>
+        <div class="flex items-center justify-between">
+          <input type="text" id="reviewExpiry" value="18/11/2026" class="w-full bg-transparent border-0 p-0 text-sm font-bold text-slate-900 focus:outline-none focus:ring-0 font-mono">
+          <i data-lucide="calendar" class="w-4 h-4 text-emerald-500 flex-shrink-0"></i>
+        </div>
+      </div>
+      <!-- Batch / Lot No -->
+      <div class="p-3.5 sm:p-4 rounded-2xl bg-[#f0f6ff] border border-blue-100/50">
+        <label class="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">BATCH / LOT NO</label>
+        <input type="text" id="reviewBatch" value="B-9482X" class="w-full bg-transparent border-0 p-0 text-sm font-bold text-slate-900 focus:outline-none focus:ring-0 font-mono">
+      </div>
+    </div>
+
+    <!-- 4. NET WT & MRP (₹) (2 COLS) -->
+    <div class="grid grid-cols-2 gap-2.5">
+      <!-- Net Wt -->
+      <div class="p-3.5 sm:p-4 rounded-2xl bg-[#f0f6ff] border border-blue-100/50">
+        <label class="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">NET WT</label>
+        <input type="text" id="reviewNetWeight" value="200g" class="w-full bg-transparent border-0 p-0 text-sm font-bold text-slate-900 focus:outline-none focus:ring-0">
+      </div>
+      <!-- MRP -->
+      <div class="p-3.5 sm:p-4 rounded-2xl bg-[#f0f6ff] border border-blue-100/50">
+        <label class="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">MRP (₹)</label>
+        <div class="flex items-baseline">
+          <span class="text-[#2563eb] font-black text-lg">₹</span>
+          <input type="number" step="0.01" id="reviewMrp" value="120" class="w-full bg-transparent border-0 p-0 text-lg font-black text-[#2563eb] focus:outline-none focus:ring-0 ml-0.5">
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. BARCODE (EAN-13) CARD -->
+    <div class="p-3.5 sm:p-4 rounded-2xl bg-[#f0f6ff] border border-blue-100/50">
+      <label class="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">BARCODE (EAN-13)</label>
+      <div class="flex items-center justify-between">
+        <input type="text" id="reviewBarcode" value="8901314010523" class="w-full bg-transparent border-0 p-0 text-sm font-bold text-slate-900 focus:outline-none focus:ring-0 font-mono tracking-wide">
+        <i data-lucide="barcode" class="w-5 h-5 text-slate-700 flex-shrink-0"></i>
+      </div>
+    </div>
+
+    <!-- 6. VERIFIED COUNT & SHELF ALLOCATION (2 COLS) -->
+    <div class="grid grid-cols-2 gap-2.5 pt-1.5 items-end">
+      <!-- Verified Count -->
+      <div>
+        <label class="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1.5">VERIFIED COUNT</label>
+        <div class="flex items-center space-x-2">
+          <button type="button" onclick="adjustReviewCount(-1)" class="w-9 h-9 rounded-xl bg-blue-100/80 hover:bg-blue-200 active:scale-95 text-blue-900 font-extrabold text-base flex items-center justify-center transition-all">-</button>
+          <span id="reviewQuantityText" class="text-base font-black text-slate-900 w-8 text-center">12</span>
+          <button type="button" onclick="adjustReviewCount(1)" class="w-9 h-9 rounded-xl bg-blue-100/80 hover:bg-blue-200 active:scale-95 text-blue-900 font-extrabold text-base flex items-center justify-center transition-all">+</button>
+        </div>
+      </div>
+
+      <!-- Shelf Allocation -->
+      <div class="flex flex-col items-end">
+        <label class="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1.5">SHELF ALLOCATION</label>
+        <div class="relative w-full">
+          <input type="text" id="reviewLocation" value="Rack C-04 • A2" class="w-full px-3 py-2 rounded-xl bg-blue-100/80 text-[#2563eb] font-extrabold text-xs text-center border-0 focus:outline-none focus:ring-1 focus:ring-blue-400">
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. PRIMARY CTA: TRANSFER TO STOCK MANAGER BUTTON -->
+    <div class="pt-2">
+      <button type="button" onclick="submitVerifiedStock()" id="transferBtn" class="w-full py-4 rounded-2xl bg-[#2563eb] hover:bg-blue-700 active:scale-98 text-white font-extrabold text-sm sm:text-base flex items-center justify-center space-x-2 shadow-xl shadow-blue-500/25 transition-all">
+        <span>Transfer to Stock Manager</span>
+        <i data-lucide="arrow-right" class="w-5 h-5 stroke-[2.5]"></i>
+      </button>
+    </div>
+
+  </form>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/review.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    initReviewPage();
+  });
+</script>
+{% endblock %}
