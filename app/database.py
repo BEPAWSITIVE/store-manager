@@ -5,6 +5,11 @@ from typing import List, Dict, Any, Optional
 from app.config import DB_PATH
 
 def get_connection():
+    try:
+        if hasattr(DB_PATH, "parent") and DB_PATH.parent:
+            DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn

@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -17,6 +18,22 @@ app = FastAPI(
     description="Multi-angle AI product scanning, automated rack & box counting, and stock inventory management.",
     version="1.0.0"
 )
+
+# Export handler for Vercel Serverless
+handler = app
+
+@app.middleware("http")
+async def fix_vercel_path_middleware(request: Request, call_next):
+    # Normalize Vercel URL rewrite prefixes so FastAPI routes match cleanly
+    path = request.scope.get("path", "")
+    for prefix in ["/app/main.py", "/app/main", "/api/index.py", "/api/index"]:
+        if path == prefix:
+            request.scope["path"] = "/"
+            break
+        elif path.startswith(prefix + "/"):
+            request.scope["path"] = path[len(prefix):]
+            break
+    return await call_next(request)
 
 # Static and templates
 static_dir = BASE_DIR / "static"
@@ -39,11 +56,16 @@ async def serve_upload(filename: str):
         return FileResponse(fallback_file)
     return FileResponse(static_file)
 
-app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
 templates = Jinja2Templates(directory=str(templates_dir))
 
-# Initialize database schema and seed data
-init_db()
+# Initialize database schema and seed data safely
+try:
+    init_db()
+except Exception as e:
+    print("[Database Init Notice]", e)
 
 # Include API routes
 app.include_router(scanner.router)
