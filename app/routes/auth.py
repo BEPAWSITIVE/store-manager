@@ -33,6 +33,12 @@ class SupabaseConfigRequest(BaseModel):
 
 # Default built-in accounts for easy out-of-the-box operation
 DEFAULT_ACCOUNTS = {
+    "manager@gmail.com": {
+        "password": "manager123",
+        "role": "manager",
+        "name": "Store Manager",
+        "redirect_url": "/scan"
+    },
     "manager@store.com": {
         "password": "manager123",
         "role": "manager",
@@ -44,6 +50,12 @@ DEFAULT_ACCOUNTS = {
         "role": "manager",
         "name": "Store Manager",
         "redirect_url": "/scan"
+    },
+    "cashier@gmail.com": {
+        "password": "billing123",
+        "role": "billing",
+        "name": "Billing Staff",
+        "redirect_url": "/billing"
     },
     "cashier@store.com": {
         "password": "billing123",
