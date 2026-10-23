@@ -16,19 +16,29 @@
   </div>
 
   <!-- KPI Summary Chips Grid -->
-  <div class="grid grid-cols-3 gap-2">
+  <div class="grid grid-cols-3 sm:grid-cols-5 gap-2 md:gap-3">
     <!-- Total Units -->
     <div class="p-2.5 rounded-2xl bg-white border border-slate-100 shadow-sm text-center">
       <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Units</div>
       <div class="text-base font-black text-slate-900 mt-0.5" id="statTotalUnits">0</div>
     </div>
+    <!-- Total SKUs -->
+    <div class="p-2.5 rounded-2xl bg-white border border-slate-100 shadow-sm text-center">
+      <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Products</div>
+      <div class="text-base font-black text-slate-900 mt-0.5" id="statTotalSkus">0</div>
+    </div>
     <!-- Low Stock -->
-    <div onclick="filterByStatus('low_stock')" class="p-2.5 rounded-2xl bg-amber-50/80 border border-amber-200/60 shadow-sm text-center cursor-pointer">
+    <div onclick="filterByStatus('low_stock')" class="p-2.5 rounded-2xl bg-amber-50/80 border border-amber-200/60 shadow-sm text-center cursor-pointer hover:bg-amber-100/60 transition-colors">
       <div class="text-[10px] font-bold text-amber-700 uppercase tracking-wider">Low Stock</div>
       <div class="text-base font-black text-amber-600 mt-0.5" id="statLowStock">0</div>
     </div>
+    <!-- Out of Stock -->
+    <div onclick="filterByStatus('out_of_stock')" class="p-2.5 rounded-2xl bg-rose-50/80 border border-rose-200/60 shadow-sm text-center cursor-pointer hover:bg-rose-100/60 transition-colors">
+      <div class="text-[10px] font-bold text-rose-700 uppercase tracking-wider">Out of Stock</div>
+      <div class="text-base font-black text-rose-600 mt-0.5" id="statOutOfStock">0</div>
+    </div>
     <!-- Valuation -->
-    <div class="p-2.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/60 shadow-sm text-center">
+    <div class="p-2.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/60 shadow-sm text-center col-span-3 sm:col-span-1">
       <div class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Valuation</div>
       <div class="text-base font-black text-emerald-600 mt-0.5" id="statTotalValuation">₹0</div>
     </div>
@@ -54,8 +64,8 @@
     </div>
   </div>
 
-  <!-- Product Cards List (Mobile-Optimized) -->
-  <div id="mobileProductsList" class="space-y-2.5 pb-6">
+  <!-- Product Cards List (Responsive: 1-col on mobile, 2-3 cols on laptop) -->
+  <div id="mobileProductsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pb-6">
     <!-- Dynamic Cards via JavaScript -->
     <div class="p-8 text-center text-slate-400">
       <div class="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>

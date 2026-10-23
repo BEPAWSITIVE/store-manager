@@ -252,6 +252,7 @@ function calculateBillTotals() {
 }
 
 function toggleCartDrawer() {
+  if (window.innerWidth >= 768) return; // Permanently open on desktop/laptop
   const drawer = document.getElementById("billingCartDrawer");
   const chevron = document.getElementById("cartDrawerChevron");
   if (!drawer) return;

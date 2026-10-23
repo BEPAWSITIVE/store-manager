@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="flex-1 min-h-0 flex flex-col p-3.5 sm:p-4 relative bg-white overflow-hidden">
+<div class="flex-1 min-h-0 flex flex-col p-3.5 sm:p-4 relative bg-white overflow-hidden items-center justify-center">
 
-  <!-- THE HOMEPAGE CAMERA CARD (Native Camera View) -->
-  <div class="w-full h-full min-h-0 relative rounded-[28px] sm:rounded-[32px] overflow-hidden shadow-lg border border-slate-100 bg-slate-900 flex flex-col justify-between" id="homeCameraCard">
+  <!-- THE HOMEPAGE CAMERA CARD (Native Camera View, gracefully sized on mobile & laptop) -->
+  <div class="w-full h-full min-h-0 max-w-xl md:max-w-2xl relative rounded-[28px] sm:rounded-[32px] overflow-hidden shadow-lg border border-slate-100 bg-slate-900 flex flex-col justify-between" id="homeCameraCard">
     
     <!-- Live Camera Video Stream -->
     <video id="cameraFeed" autoplay playsinline muted class="absolute inset-0 w-full h-full object-cover"></video>

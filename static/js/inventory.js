@@ -25,12 +25,16 @@ async function fetchInventoryStats() {
     if (data.success && data.stats) {
       const s = data.stats;
       const elUnits = document.getElementById("statTotalUnits");
+      const elSkus = document.getElementById("statTotalSkus");
       const elLow = document.getElementById("statLowStock");
+      const elOut = document.getElementById("statOutOfStock");
       const elVal = document.getElementById("statTotalValuation");
 
-      if (elUnits) elUnits.innerText = s.total_units.toLocaleString();
-      if (elLow) elLow.innerText = s.low_stock_count;
-      if (elVal) elVal.innerText = `₹${s.total_value.toLocaleString()}`;
+      if (elUnits) elUnits.innerText = (s.total_units || 0).toLocaleString();
+      if (elSkus) elSkus.innerText = (s.total_skus || 0).toLocaleString();
+      if (elLow) elLow.innerText = s.low_stock_count || 0;
+      if (elOut) elOut.innerText = s.out_of_stock_count || 0;
+      if (elVal) elVal.innerText = `₹${(s.total_value || 0).toLocaleString()}`;
 
       const catSelect = document.getElementById("filterCategory");
       if (catSelect && s.categories) {
@@ -123,7 +127,7 @@ function renderMobileProducts(products) {
           <!-- Product Details -->
           <div class="flex-1 min-w-0">
             <div class="flex items-start justify-between">
-              <h3 class="font-bold text-slate-900 text-xs truncate max-w-[160px]">${p.name}</h3>
+              <h3 class="font-bold text-slate-900 text-xs truncate max-w-[160px] md:max-w-none">${p.name}</h3>
               <div class="text-right">
                 <div class="text-xs font-black text-slate-900">₹${(p.mrp || 0).toLocaleString()}</div>
               </div>

@@ -1,70 +1,75 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="flex-1 min-h-0 flex flex-col bg-slate-50 relative overflow-hidden">
+<div class="flex-1 min-h-0 flex flex-col md:flex-row bg-slate-50 relative overflow-hidden">
 
-  <!-- Top Billing Header & Stats -->
-  <div class="px-4 pt-3 pb-2 bg-white border-b border-slate-100 flex-shrink-0">
-    <div class="flex items-center justify-between">
-      <div>
-        <h2 class="text-lg font-black text-slate-900 tracking-tight flex items-center space-x-1.5">
-          <i data-lucide="receipt" class="w-5 h-5 text-[#2563eb]"></i>
-          <span>Billing & POS Checkout</span>
-        </h2>
-        <p class="text-[11px] text-slate-500 font-medium">Real-time Supabase stock deduction</p>
-      </div>
-
-      <div class="flex items-center space-x-2">
-        <!-- View Invoices History Button -->
-        <button type="button" onclick="openInvoiceHistoryModal()" class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center space-x-1 transition-colors" title="Recent Invoices">
-          <i data-lucide="history" class="w-3.5 h-3.5"></i>
-          <span class="hidden sm:inline">Bills</span>
-        </button>
-
-        <!-- Reset / Clear Bill -->
-        <button type="button" onclick="resetCurrentBill()" class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-600 font-bold text-xs transition-colors" title="Clear Bill">
-          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
-        </button>
-      </div>
-    </div>
-
-    <!-- Search & Instant Barcode Input -->
-    <div class="mt-2.5 flex items-center space-x-2">
-      <div class="relative flex-1">
-        <input type="text" id="billingSearchInput" oninput="handleBillingSearch(event)" placeholder="Search product name, brand or barcode..." class="w-full pl-8 pr-3 py-2 rounded-xl bg-slate-100/80 border-0 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
-        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5"></i>
-      </div>
-      
-      <!-- Barcode Quick Add -->
-      <button type="button" onclick="promptBarcodeScan()" class="px-3 py-2 rounded-xl bg-[#2563eb] text-white font-bold text-xs flex items-center space-x-1 shadow-sm active:scale-95 transition-transform" title="Barcode Scan">
-        <i data-lucide="barcode" class="w-4 h-4"></i>
-        <span class="hidden sm:inline">Scan</span>
-      </button>
-    </div>
-
-    <!-- Category Filter Chips -->
-    <div id="billingCategoryChips" class="flex items-center space-x-1.5 overflow-x-auto py-2 scrollbar-none">
-      <button type="button" onclick="filterBillingCategory('All')" class="category-chip active px-3 py-1 rounded-full text-[10px] font-extrabold bg-[#2563eb] text-white flex-shrink-0 transition-all">All Items</button>
-      <button type="button" onclick="filterBillingCategory('Breakfast & Spreads')" class="category-chip px-3 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 flex-shrink-0 transition-all">Spreads</button>
-      <button type="button" onclick="filterBillingCategory('Beverages')" class="category-chip px-3 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 flex-shrink-0 transition-all">Beverages</button>
-      <button type="button" onclick="filterBillingCategory('Personal Care')" class="category-chip px-3 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 flex-shrink-0 transition-all">Personal Care</button>
-      <button type="button" onclick="filterBillingCategory('Hygiene & Cleaning')" class="category-chip px-3 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 flex-shrink-0 transition-all">Cleaning</button>
-    </div>
-  </div>
-
-  <!-- Products Catalog List (Scrollable Area) -->
-  <div id="billingProductList" class="flex-1 min-h-0 overflow-y-auto p-3.5 space-y-2.5 pb-28">
-    <div class="text-center py-8 text-slate-400 text-xs">
-      <div class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-      Loading stock from Supabase...
-    </div>
-  </div>
-
-  <!-- Active Cart / Bottom Summary Bar -->
-  <div id="billingCartDrawer" class="absolute bottom-0 inset-x-0 bg-white border-t border-slate-200 shadow-2xl rounded-t-3xl z-40 transition-all duration-300 transform translate-y-[calc(100%-68px)] max-h-[82%] flex flex-col">
+  <!-- Left Side: Products Catalog & Quick Search (Responsive: 1 col on mobile, 2-3 cols on laptop) -->
+  <div class="flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden">
     
-    <!-- Drawer Handle / Tap to expand Header -->
-    <div onclick="toggleCartDrawer()" class="px-4 py-3 flex items-center justify-between cursor-pointer border-b border-slate-100 flex-shrink-0 bg-white rounded-t-3xl">
+    <!-- Top Billing Header & Quick Search -->
+    <div class="px-4 pt-3.5 pb-2.5 bg-white border-b border-slate-100 flex-shrink-0">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-base sm:text-lg font-black text-slate-900 tracking-tight flex items-center space-x-1.5">
+            <i data-lucide="receipt" class="w-5 h-5 text-[#2563eb]"></i>
+            <span>Billing POS Terminal</span>
+          </h2>
+          <p class="text-[11px] text-slate-500 font-medium">Real-time stock deduction with Supabase</p>
+        </div>
+
+        <div class="flex items-center space-x-2">
+          <!-- View Invoices History Button -->
+          <button type="button" onclick="openInvoiceHistoryModal()" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center space-x-1.5 transition-colors" title="Recent Invoices">
+            <i data-lucide="history" class="w-3.5 h-3.5"></i>
+            <span>Bills History</span>
+          </button>
+
+          <!-- Reset / Clear Bill -->
+          <button type="button" onclick="resetCurrentBill()" class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-600 font-bold text-xs transition-colors" title="Clear Bill">
+            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Search & Instant Barcode Input -->
+      <div class="mt-2.5 flex items-center space-x-2">
+        <div class="relative flex-1">
+          <input type="text" id="billingSearchInput" oninput="handleBillingSearch(event)" placeholder="Search products by title, brand, or barcode..." class="w-full pl-8 pr-3 py-2 rounded-xl bg-slate-100/90 border-0 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5"></i>
+        </div>
+        
+        <!-- Barcode Quick Add -->
+        <button type="button" onclick="promptBarcodeScan()" class="px-3.5 py-2 rounded-xl bg-[#2563eb] hover:bg-blue-600 text-white font-bold text-xs flex items-center space-x-1.5 shadow-sm active:scale-95 transition-transform" title="Barcode Scan">
+          <i data-lucide="barcode" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Scan Barcode</span>
+        </button>
+      </div>
+
+      <!-- Category Filter Chips -->
+      <div id="billingCategoryChips" class="flex items-center space-x-1.5 overflow-x-auto py-2 scrollbar-none">
+        <button type="button" onclick="filterBillingCategory('All')" class="category-chip active px-3 py-1 rounded-full text-[10px] font-extrabold bg-[#2563eb] text-white flex-shrink-0 transition-all">All Items</button>
+        <button type="button" onclick="filterBillingCategory('Breakfast & Spreads')" class="category-chip px-3 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 flex-shrink-0 transition-all">Spreads</button>
+        <button type="button" onclick="filterBillingCategory('Beverages')" class="category-chip px-3 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 flex-shrink-0 transition-all">Beverages</button>
+        <button type="button" onclick="filterBillingCategory('Personal Care')" class="category-chip px-3 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 flex-shrink-0 transition-all">Personal Care</button>
+        <button type="button" onclick="filterBillingCategory('Hygiene & Cleaning')" class="category-chip px-3 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 flex-shrink-0 transition-all">Cleaning</button>
+      </div>
+    </div>
+
+    <!-- Products Catalog Grid (Responsive 1-col on mobile, 2-3 cols on laptop) -->
+    <div id="billingProductList" class="flex-1 min-h-0 overflow-y-auto p-3.5 sm:p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 content-start pb-24 md:pb-4">
+      <div class="col-span-full text-center py-12 text-slate-400 text-xs">
+        <div class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+        Loading stock from Supabase...
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Right Side: Active Cart & Billing Panel (Drawer on Mobile, Permanent Side Panel on Laptop) -->
+  <div id="billingCartDrawer" class="fixed md:static inset-x-0 bottom-0 z-40 bg-white border-t md:border-t-0 md:border-l border-slate-200 shadow-2xl md:shadow-none rounded-t-3xl md:rounded-none transition-all duration-300 transform translate-y-[calc(100%-68px)] md:translate-y-0 max-h-[85%] md:max-h-full md:w-96 lg:w-[420px] flex flex-col flex-shrink-0">
+    
+    <!-- Drawer Handle on Mobile / Fixed Header on Laptop -->
+    <div onclick="toggleCartDrawer()" class="px-4 py-3 flex items-center justify-between cursor-pointer md:cursor-default border-b border-slate-100 flex-shrink-0 bg-white rounded-t-3xl md:rounded-none">
       <div class="flex items-center space-x-2.5">
         <div class="relative">
           <div class="w-10 h-10 rounded-xl bg-blue-50 text-[#2563eb] flex items-center justify-center font-black">
@@ -74,10 +79,10 @@
         </div>
         <div>
           <div class="text-xs font-black text-slate-900 flex items-center space-x-1">
-            <span id="cartItemsSummaryText">0 Items in Cart</span>
-            <i data-lucide="chevron-up" id="cartDrawerChevron" class="w-3.5 h-3.5 text-slate-400 transition-transform"></i>
+            <span id="cartItemsSummaryText">0 Items in Bill</span>
+            <i data-lucide="chevron-up" id="cartDrawerChevron" class="w-3.5 h-3.5 text-slate-400 transition-transform md:hidden"></i>
           </div>
-          <p class="text-[10px] text-slate-500 font-medium">Tap to view / edit items</p>
+          <p class="text-[10px] text-slate-500 font-medium">Customer Checkout & Payment</p>
         </div>
       </div>
 
@@ -93,8 +98,8 @@
       <!-- Cart Items -->
       <div class="space-y-2">
         <div class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Current Bill Items</div>
-        <div id="cartItemsList" class="space-y-2">
-          <div class="text-center py-4 text-xs text-slate-400 font-medium">No items added to bill yet. Tap + on products to add.</div>
+        <div id="cartItemsList" class="space-y-2 max-h-48 md:max-h-56 overflow-y-auto pr-0.5">
+          <div class="text-center py-6 text-xs text-slate-400 font-medium">No items added to bill yet. Tap + on products to add.</div>
         </div>
       </div>
 
