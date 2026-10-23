@@ -1,8 +1,19 @@
 import sqlite3
 import json
+import uuid
 from datetime import datetime
-from typing import List, Dict, Any, Optional
-from app.config import DB_PATH
+from typing import List, Dict, Any, Optional, Tuple
+from app.config import DB_PATH, is_supabase_configured
+from app.supabase_client import (
+    sb_get_all_products,
+    sb_get_product_by_id,
+    sb_insert_product,
+    sb_update_product,
+    sb_delete_product,
+    sb_adjust_stock,
+    sb_create_invoice,
+    sb_get_invoices
+)
 
 def get_connection():
     try:
@@ -58,6 +69,24 @@ def init_db():
         reason TEXT DEFAULT 'Adjustment',
         timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
+    )
+    """)
+
+    # Invoices / Billing table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS invoices (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        invoice_number TEXT UNIQUE NOT NULL,
+        customer_name TEXT DEFAULT 'Walk-in Customer',
+        customer_mobile TEXT,
+        subtotal REAL NOT NULL DEFAULT 0.0,
+        discount_amount REAL DEFAULT 0.0,
+        tax_amount REAL DEFAULT 0.0,
+        grand_total REAL NOT NULL DEFAULT 0.0,
+        payment_mode TEXT DEFAULT 'Cash',
+        items TEXT NOT NULL DEFAULT '[]',
+        cashier_email TEXT DEFAULT 'cashier@store.com',
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
     """)
 
@@ -180,6 +209,11 @@ def seed_sample_products(cursor):
         """, p)
 
 def get_all_products(search: str = "", category: str = "", status: str = "", sort_by: str = "updated_at"):
+    if is_supabase_configured():
+        sb_prods = sb_get_all_products(search=search, category=category, status=status, sort_by=sort_by)
+        if sb_prods is not None and len(sb_prods) > 0:
+            return sb_prods
+
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -246,6 +280,11 @@ def get_all_products(search: str = "", category: str = "", status: str = "", sor
     return products
 
 def get_product_by_id(product_id: int) -> Optional[Dict[str, Any]]:
+    if is_supabase_configured():
+        sb_prod = sb_get_product_by_id(product_id)
+        if sb_prod:
+            return sb_prod
+
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM products WHERE id = ?", (product_id,))
@@ -261,6 +300,11 @@ def get_product_by_id(product_id: int) -> Optional[Dict[str, Any]]:
     return d
 
 def insert_product(data: Dict[str, Any]) -> int:
+    if is_supabase_configured():
+        prod_id = sb_insert_product(data)
+        if prod_id:
+            return prod_id
+
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -325,6 +369,9 @@ def insert_product(data: Dict[str, Any]) -> int:
     return product_id
 
 def update_product(product_id: int, data: Dict[str, Any]) -> bool:
+    if is_supabase_configured():
+        return sb_update_product(product_id, data)
+
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -387,6 +434,11 @@ def update_product(product_id: int, data: Dict[str, Any]) -> bool:
     return True
 
 def adjust_product_quantity(product_id: int, delta: int, reason: str = "Quick Stock Adjust") -> Optional[int]:
+    if is_supabase_configured():
+        res = sb_adjust_stock(product_id, delta, reason=reason)
+        if res is not None:
+            return res
+
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -411,6 +463,9 @@ def adjust_product_quantity(product_id: int, delta: int, reason: str = "Quick St
     return new_qty
 
 def delete_product(product_id: int) -> bool:
+    if is_supabase_configured():
+        return sb_delete_product(product_id)
+
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("DELETE FROM products WHERE id = ?", (product_id,))
@@ -419,7 +474,108 @@ def delete_product(product_id: int) -> bool:
     conn.close()
     return True
 
+def create_invoice(invoice_data: Dict[str, Any]) -> Dict[str, Any]:
+    if is_supabase_configured():
+        return sb_create_invoice(invoice_data)
+    
+    conn = get_connection()
+    cursor = conn.cursor()
+    inv_num = invoice_data.get("invoice_number") or f"INV-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:4].upper()}"
+    items = invoice_data.get("items") or []
+    items_json = json.dumps(items)
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Deduct stock for all purchased items
+    for item in items:
+        p_id = item.get("product_id") or item.get("id")
+        qty = int(item.get("quantity") or 1)
+        if p_id:
+            adjust_product_quantity(int(p_id), -qty, reason=f"Billed in {inv_num}")
+
+    cursor.execute("""
+    INSERT INTO invoices (
+        invoice_number, customer_name, customer_mobile, subtotal, discount_amount,
+        tax_amount, grand_total, payment_mode, items, cashier_email, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        inv_num,
+        invoice_data.get("customer_name") or "Walk-in Customer",
+        invoice_data.get("customer_mobile") or "",
+        float(invoice_data.get("subtotal") or 0.0),
+        float(invoice_data.get("discount_amount") or 0.0),
+        float(invoice_data.get("tax_amount") or 0.0),
+        float(invoice_data.get("grand_total") or 0.0),
+        invoice_data.get("payment_mode") or "Cash",
+        items_json,
+        invoice_data.get("cashier_email") or "cashier@store.com",
+        now
+    ))
+    conn.commit()
+    conn.close()
+
+    invoice_data["invoice_number"] = inv_num
+    invoice_data["created_at"] = now
+    return invoice_data
+
+def get_invoices(limit: int = 50) -> List[Dict[str, Any]]:
+    if is_supabase_configured():
+        return sb_get_invoices(limit=limit)
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM invoices ORDER BY created_at DESC LIMIT ?", (limit,))
+    rows = cursor.fetchall()
+    conn.close()
+    invoices = []
+    for r in rows:
+        d = dict(r)
+        try:
+            d["items"] = json.loads(d["items"])
+        except Exception:
+            d["items"] = []
+        invoices.append(d)
+    return invoices
+
+def sync_local_to_supabase() -> Tuple[int, str]:
+    """Syncs existing SQLite products to Supabase so cloud database has the catalog."""
+    if not is_supabase_configured():
+        return 0, "Supabase is not configured."
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM products")
+    rows = cursor.fetchall()
+    conn.close()
+    synced = 0
+    for r in rows:
+        p = dict(r)
+        try:
+            p["angle_images"] = json.loads(p["angle_images"]) if p["angle_images"] else []
+        except:
+            p["angle_images"] = []
+        res = sb_insert_product(p)
+        if res:
+            synced += 1
+    return synced, f"Synced {synced} products to Supabase successfully."
+
 def get_inventory_stats() -> Dict[str, Any]:
+    if is_supabase_configured():
+        prods = get_all_products()
+        total_skus = len(prods)
+        total_units = sum(int(p.get("quantity") or 0) for p in prods)
+        total_value = sum(float(p.get("mrp") or 0.0) * int(p.get("quantity") or 0) for p in prods)
+        low_stock = sum(1 for p in prods if 0 < int(p.get("quantity") or 0) <= int(p.get("min_stock_alert") or 5))
+        out_of_stock = sum(1 for p in prods if int(p.get("quantity") or 0) <= 0)
+        categories = sorted(list(set(p.get("category") for p in prods if p.get("category"))))
+        return {
+            "total_skus": total_skus,
+            "total_units": total_units,
+            "total_value": round(total_value, 2),
+            "low_stock_count": low_stock,
+            "out_of_stock_count": out_of_stock,
+            "expiring_soon_count": 0,
+            "expired_count": 0,
+            "categories": categories
+        }
+
     conn = get_connection()
     cursor = conn.cursor()
     today = datetime.now().strftime("%Y-%m-%d")

@@ -11,7 +11,7 @@ from app.config import (
     get_gemini_api_key, get_gemini_model, APP_MODE
 )
 from app.database import init_db
-from app.routes import scanner, inventory, settings
+from app.routes import scanner, inventory, settings, auth, billing
 
 app = FastAPI(
     title="StoreScan AI - Smart Store & Stock Manager",
@@ -68,19 +68,65 @@ except Exception as e:
     print("[Database Init Notice]", e)
 
 # Include API routes
+app.include_router(auth.router)
 app.include_router(scanner.router)
 app.include_router(inventory.router)
+app.include_router(billing.router)
 app.include_router(settings.router)
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request):
+    """Staff Login page with Supabase Auth & role separation."""
+    return templates.TemplateResponse(
+        request=request,
+        name="login.html",
+        context={
+            "page_title": "Store Manager - Staff Login",
+            "active_tab": "login",
+            "has_api_key": bool(get_gemini_api_key()),
+            "gemini_model": get_gemini_model(),
+            "app_mode": APP_MODE
+        }
+    )
 
 @app.get("/", response_class=HTMLResponse)
 async def home_page(request: Request):
-    """Home / Product & Rack Scanner page with the empty box viewfinder."""
+    """Scan / Camera page."""
     return templates.TemplateResponse(
         request=request,
         name="scanner.html",
         context={
-            "page_title": "AI Product & Rack Scanner",
+            "page_title": "Store Scanner - Scan Product",
             "active_tab": "scanner",
+            "has_api_key": bool(get_gemini_api_key()),
+            "gemini_model": get_gemini_model(),
+            "app_mode": APP_MODE
+        }
+    )
+
+@app.get("/scan", response_class=HTMLResponse)
+async def scan_page_alias(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="scanner.html",
+        context={
+            "page_title": "Store Scanner - Scan Product",
+            "active_tab": "scanner",
+            "has_api_key": bool(get_gemini_api_key()),
+            "gemini_model": get_gemini_model(),
+            "app_mode": APP_MODE
+        }
+    )
+
+@app.get("/billing", response_class=HTMLResponse)
+async def billing_page(request: Request):
+    """Billing POS Web App connected to Supabase."""
+    return templates.TemplateResponse(
+        request=request,
+        name="billing.html",
+        context={
+            "page_title": "Billing POS - Retail Checkout",
+            "active_tab": "billing",
             "has_api_key": bool(get_gemini_api_key()),
             "gemini_model": get_gemini_model(),
             "app_mode": APP_MODE

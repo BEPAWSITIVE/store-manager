@@ -97,3 +97,54 @@ def set_gemini_api_key(key: str) -> None:
 
 def set_gemini_model(model: str) -> None:
     set_gemini_config(model=model)
+
+# Supabase configuration for persistent cloud inventory & auth
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip()
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "").strip() or os.getenv("SUPABASE_ANON_KEY", "").strip()
+
+def get_supabase_url() -> str:
+    global SUPABASE_URL
+    return SUPABASE_URL or os.getenv("SUPABASE_URL", "").strip()
+
+def get_supabase_key() -> str:
+    global SUPABASE_KEY
+    return SUPABASE_KEY or os.getenv("SUPABASE_KEY", "").strip() or os.getenv("SUPABASE_ANON_KEY", "").strip()
+
+def is_supabase_configured() -> bool:
+    return bool(get_supabase_url() and get_supabase_key())
+
+def set_supabase_config(url: str = None, key: str = None) -> None:
+    global SUPABASE_URL, SUPABASE_KEY
+    if url is not None:
+        SUPABASE_URL = url.strip().rstrip("/")
+    if key is not None:
+        SUPABASE_KEY = key.strip()
+
+    try:
+        env_file = BASE_DIR / ".env"
+        lines = []
+        has_url = False
+        has_key = False
+
+        if env_file.exists():
+            with open(env_file, "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.startswith("SUPABASE_URL="):
+                        lines.append(f"SUPABASE_URL={SUPABASE_URL}\n")
+                        has_url = True
+                    elif line.startswith("SUPABASE_KEY=") or line.startswith("SUPABASE_ANON_KEY="):
+                        lines.append(f"SUPABASE_KEY={SUPABASE_KEY}\n")
+                        has_key = True
+                    else:
+                        lines.append(line)
+
+        if not has_url:
+            lines.append(f"SUPABASE_URL={SUPABASE_URL}\n")
+        if not has_key:
+            lines.append(f"SUPABASE_KEY={SUPABASE_KEY}\n")
+
+        with open(env_file, "w", encoding="utf-8") as f:
+            f.writelines(lines)
+    except Exception:
+        pass
+
