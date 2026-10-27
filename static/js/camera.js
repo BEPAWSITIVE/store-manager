@@ -337,8 +337,8 @@ async function submitAllPhotosForAnalysis() {
         quantity: (p.quantity && parseInt(p.quantity) > 0) ? parseInt(p.quantity) : 1,
         location: p.location || "",
         is_ai_live: !!p.is_ai_live,
-        primary_image: data.primary_image || capturedPhotos[0].dataUrl,
-        angle_images: data.angle_images || capturedPhotos.map(cp => cp.dataUrl)
+        primary_image: capturedPhotos[0] ? capturedPhotos[0].dataUrl : "",
+        angle_images: capturedPhotos.map(cp => cp.dataUrl)
       };
 
       sessionStorage.setItem("captured_product_data", JSON.stringify(reviewData));

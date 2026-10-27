@@ -147,9 +147,6 @@ async function submitVerifiedStock() {
   if (!primaryImage && angleImages.length > 0) {
     primaryImage = angleImages[0];
   }
-  if (!primaryImage) {
-    primaryImage = "/static/uploads/store_shelf_preview.jpg";
-  }
 
   const payload = {
     name: name,

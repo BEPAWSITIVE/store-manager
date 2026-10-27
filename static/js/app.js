@@ -120,6 +120,26 @@ async function fetchSettingsStatus() {
         modelSelect.value = data.model;
       }
     }
+
+    // Also fetch Supabase status & pre-populate inputs so user sees it connected
+    const sbRes = await fetch("/api/auth/status");
+    const sbData = await sbRes.json();
+    const sbUrlInput = document.getElementById("supabaseUrlInput");
+    const sbKeyInput = document.getElementById("supabaseKeyInput");
+
+    const savedUrl = localStorage.getItem("store_supabase_url") || sbData.supabase_url || "https://bxaqfnaxiegsfxmffgqo.supabase.co";
+    const savedKey = localStorage.getItem("store_supabase_key") || "";
+
+    if (sbUrlInput && !sbUrlInput.value) {
+      sbUrlInput.value = savedUrl;
+    }
+    if (sbKeyInput && !sbKeyInput.value) {
+      if (savedKey) {
+        sbKeyInput.value = savedKey;
+      } else if (sbData.masked_supabase_key) {
+        sbKeyInput.placeholder = `Configured: ${sbData.masked_supabase_key}`;
+      }
+    }
   } catch (e) {
     console.error("Settings fetch failed", e);
   }
@@ -299,6 +319,8 @@ async function saveSupabaseConfig() {
     });
     const data = await res.json();
     if (data.success) {
+      localStorage.setItem("store_supabase_url", url);
+      localStorage.setItem("store_supabase_key", key);
       showToast(data.message || "Connected to Supabase successfully!", "success");
       setTimeout(() => closeSettingsModal(), 600);
     } else {

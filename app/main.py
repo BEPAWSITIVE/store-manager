@@ -50,11 +50,8 @@ async def serve_upload(filename: str):
     static_file = static_dir / "uploads" / filename
     if static_file.exists():
         return FileResponse(static_file)
-    # Fallback to store shelf preview
-    fallback_file = static_dir / "uploads" / "store_shelf_preview.jpg"
-    if fallback_file.exists():
-        return FileResponse(fallback_file)
-    return FileResponse(static_file)
+    # If not found, return 404 rather than serving a deceptive stock shelf image
+    raise HTTPException(status_code=404, detail="Upload file not found")
 
 if static_dir.exists():
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")

@@ -113,7 +113,8 @@ function renderMobileProducts(products) {
       }
     }
 
-    const thumb = p.primary_image || "/static/uploads/store_shelf_preview.jpg";
+    const defaultSvg = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><rect x='2' y='7' width='20' height='14' rx='2' ry='2'></rect><path d='M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16'></path></svg>";
+    const thumb = (p.primary_image && p.primary_image !== "/static/uploads/store_shelf_preview.jpg") ? p.primary_image : defaultSvg;
     const isLow = p.quantity <= (p.min_stock_alert || 5);
 
     return `
@@ -259,7 +260,12 @@ function openPhotosModal(productId) {
   }
 
   if (photos.length === 0) {
-    photos.push({ label: "Shelf View", url: "/static/uploads/store_shelf_preview.jpg" });
+    if (prod.primary_image && prod.primary_image !== "/static/uploads/store_shelf_preview.jpg") {
+      photos.push({ label: "Product Photo", url: prod.primary_image });
+    } else {
+      const defaultSvg = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><rect x='2' y='7' width='20' height='14' rx='2' ry='2'></rect><path d='M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16'></path></svg>";
+      photos.push({ label: "Product Photo", url: defaultSvg });
+    }
   }
 
   mainImg.src = photos[0].url;

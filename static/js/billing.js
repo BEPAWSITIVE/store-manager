@@ -64,7 +64,8 @@ function renderBillingCatalog() {
       stockBadge = `<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-100 text-amber-800">${qty} left (Low)</span>`;
     }
 
-    const imgUrl = prod.primary_image || "/static/uploads/store_shelf_preview.jpg";
+    const defaultSvg = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><rect x='2' y='7' width='20' height='14' rx='2' ry='2'></rect><path d='M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16'></path></svg>";
+    const imgUrl = (prod.primary_image && prod.primary_image !== "/static/uploads/store_shelf_preview.jpg") ? prod.primary_image : defaultSvg;
 
     return `
       <div class="p-3 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center justify-between space-x-3 transition-all hover:shadow-md">
@@ -161,7 +162,7 @@ function addToCart(productId) {
       total: parseFloat(product.mrp || 0),
       max_stock: availableStock,
       barcode: product.barcode || "",
-      image: product.primary_image || "/static/uploads/store_shelf_preview.jpg"
+      image: (product.primary_image && product.primary_image !== "/static/uploads/store_shelf_preview.jpg") ? product.primary_image : ""
     });
   }
 
