@@ -40,9 +40,9 @@ HOST = os.getenv("HOST", "127.0.0.1")
 PORT = int(os.getenv("PORT", "8000"))
 DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1", "yes")
 
-# Gemini API configuration - Defaults to Gemini 3.5 Flash
+# Gemini API configuration - Defaults to Gemini 2.5 Flash
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash").strip()
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash").strip()
 APP_MODE = os.getenv("APP_MODE", "live" if GEMINI_API_KEY else "demo")
 
 def get_gemini_api_key() -> str:
@@ -51,7 +51,7 @@ def get_gemini_api_key() -> str:
 
 def get_gemini_model() -> str:
     global GEMINI_MODEL
-    return GEMINI_MODEL or os.getenv("GEMINI_MODEL", "gemini-3.5-flash").strip()
+    return GEMINI_MODEL or os.getenv("GEMINI_MODEL", "gemini-2.5-flash").strip()
 
 def set_gemini_config(key: str = None, model: str = None) -> None:
     global GEMINI_API_KEY, GEMINI_MODEL, APP_MODE

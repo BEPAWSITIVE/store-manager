@@ -124,32 +124,22 @@
 
   </div>
 
-  <!-- Settings / Gemini & Supabase Modal -->
+  <!-- Settings / Database Modal -->
   <div id="settingsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm hidden">
     <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl relative text-slate-900 max-h-[90vh] overflow-y-auto">
       <button onclick="closeSettingsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1.5 rounded-full hover:bg-slate-100">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
 
-      <!-- Tabs: AI Engine & Supabase Database -->
-      <div class="flex items-center space-x-2 border-b border-slate-100 pb-3 mb-4">
-        <button type="button" onclick="switchSettingsTab('supabase')" id="tabBtnSupabase" class="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-[#2563eb] text-white transition-all">
-          Supabase DB
-        </button>
-        <button type="button" onclick="switchSettingsTab('gemini')" id="tabBtnGemini" class="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-all">
-          Gemini AI
-        </button>
-      </div>
-
-      <!-- Supabase Tab Content -->
+      <!-- Supabase Database Configuration -->
       <div id="settingsTabSupabase" class="space-y-3.5">
-        <div class="flex items-center space-x-2.5">
-          <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
-            <i data-lucide="database" class="w-4 h-4"></i>
+        <div class="flex items-center space-x-2.5 pb-2 border-b border-slate-100">
+          <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="database" class="w-5 h-5"></i>
           </div>
           <div>
-            <h4 class="text-xs font-extrabold text-slate-900">Supabase Cloud Stock & Auth</h4>
-            <p class="text-[10px] text-slate-500">Persistent database for Inventory & Billing</p>
+            <h4 class="text-sm font-extrabold text-slate-900">Supabase Cloud Database</h4>
+            <p class="text-[10px] text-slate-500">Persistent storage for Stock & Billing</p>
           </div>
         </div>
 
@@ -182,35 +172,6 @@
           </div>
           <p>Run the SQL schema in Supabase SQL Editor to create <code>products</code> & <code>invoices</code> tables.</p>
         </div>
-      </div>
-
-      <!-- Gemini AI Tab Content -->
-      <div id="settingsTabGemini" class="space-y-3.5 hidden">
-        <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Model Engine</label>
-          <select id="geminiModelSelect" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 font-bold focus:outline-none focus:border-blue-500">
-            <option value="gemini-2.0-flash" selected>Gemini 2.0 Flash (Recommended - Fastest)</option>
-            <option value="gemini-1.5-flash">Gemini 1.5 Flash (Standard)</option>
-            <option value="gemini-1.5-pro">Gemini 1.5 Pro (Deep Inspection)</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Gemini API Key</label>
-          <div class="relative">
-            <input type="password" id="geminiApiKeyInput" placeholder="AIzaSy..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 font-mono focus:outline-none focus:border-blue-500">
-            <button type="button" onclick="toggleApiKeyVisibility()" class="absolute right-3 top-2 text-slate-400 hover:text-slate-600">
-              <i data-lucide="eye" id="apiKeyEyeIcon" class="w-4 h-4"></i>
-            </button>
-          </div>
-          <p class="text-[10px] text-slate-500 mt-1">
-            Optional. Enables real-time packaging inspection and rack counting.
-          </p>
-        </div>
-
-        <button type="button" onclick="saveGeminiApiKey()" id="saveApiKeyBtn" class="w-full py-2.5 rounded-xl bg-[#2563eb] hover:bg-blue-600 text-white font-bold text-xs shadow-md shadow-blue-500/20">
-          Save Gemini Configuration
-        </button>
       </div>
 
       <div class="pt-3 border-t border-slate-100 flex justify-end">

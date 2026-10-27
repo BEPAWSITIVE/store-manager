@@ -95,33 +95,9 @@ function closeAlertsModal() {
   if (modal) modal.classList.add("hidden");
 }
 
-function toggleApiKeyVisibility() {
-  const input = document.getElementById("geminiApiKeyInput");
-  if (!input) return;
-  input.type = input.type === "password" ? "text" : "password";
-}
-
 async function fetchSettingsStatus() {
   try {
-    const res = await fetch("/api/settings");
-    const data = await res.json();
-    if (data.success) {
-      const input = document.getElementById("geminiApiKeyInput");
-      if (input && data.has_api_key && !input.value) {
-        input.placeholder = `Configured: ${data.masked_api_key}`;
-      }
-      const localKey = localStorage.getItem("store_gemini_api_key");
-      if (localKey && input && !input.value) {
-        input.value = localKey;
-      }
-
-      const modelSelect = document.getElementById("geminiModelSelect");
-      if (modelSelect && data.model) {
-        modelSelect.value = data.model;
-      }
-    }
-
-    // Also fetch Supabase status & pre-populate inputs so user sees it connected
+    // Fetch Supabase status & pre-populate inputs so user sees it connected
     const sbRes = await fetch("/api/auth/status");
     const sbData = await sbRes.json();
     const sbUrlInput = document.getElementById("supabaseUrlInput");
@@ -142,50 +118,6 @@ async function fetchSettingsStatus() {
     }
   } catch (e) {
     console.error("Settings fetch failed", e);
-  }
-}
-
-async function saveGeminiApiKey() {
-  const input = document.getElementById("geminiApiKeyInput");
-  const modelSelect = document.getElementById("geminiModelSelect");
-  
-  const key = input ? input.value.trim() : "";
-  const model = modelSelect ? modelSelect.value : "gemini-2.0-flash";
-
-  if (key) {
-    localStorage.setItem("store_gemini_api_key", key);
-  }
-  localStorage.setItem("store_gemini_model", model);
-
-  const btn = document.getElementById("saveApiKeyBtn");
-  if (btn) btn.disabled = true;
-
-  try {
-    const res = await fetch("/api/settings/gemini-key", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ api_key: key, model: model })
-    });
-    const data = await res.json();
-
-    if (data.success) {
-      showToast(data.message || `Connected to ${model}!`, "success");
-      const navStatus = document.getElementById("navAiStatus");
-      if (navStatus) {
-        if (data.mode === "live") {
-          navStatus.innerText = `${model} (Live)`;
-        } else {
-          navStatus.innerText = `Demo Mode (${model})`;
-        }
-      }
-      closeSettingsModal();
-    } else {
-      showToast(data.detail || "Validation failed", "error");
-    }
-  } catch (e) {
-    showToast("Network error saving settings", "error");
-  } finally {
-    if (btn) btn.disabled = false;
   }
 }
 
@@ -261,35 +193,8 @@ function logoutStaff() {
 }
 
 // -------------------------------------------------------------
-// Settings Tabs: Supabase & Gemini
+// Settings: Supabase Cloud Configuration
 // -------------------------------------------------------------
-
-function switchSettingsTab(tab) {
-  const tabSb = document.getElementById("settingsTabSupabase");
-  const tabGm = document.getElementById("settingsTabGemini");
-  const btnSb = document.getElementById("tabBtnSupabase");
-  const btnGm = document.getElementById("tabBtnGemini");
-
-  if (tab === "supabase") {
-    if (tabSb) tabSb.classList.remove("hidden");
-    if (tabGm) tabGm.classList.add("hidden");
-    if (btnSb) {
-      btnSb.className = "px-3 py-1.5 rounded-xl text-xs font-extrabold bg-[#2563eb] text-white transition-all";
-    }
-    if (btnGm) {
-      btnGm.className = "px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-all";
-    }
-  } else {
-    if (tabSb) tabSb.classList.add("hidden");
-    if (tabGm) tabGm.classList.remove("hidden");
-    if (btnGm) {
-      btnGm.className = "px-3 py-1.5 rounded-xl text-xs font-extrabold bg-[#2563eb] text-white transition-all";
-    }
-    if (btnSb) {
-      btnSb.className = "px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-all";
-    }
-  }
-}
 
 async function saveSupabaseConfig() {
   const urlInput = document.getElementById("supabaseUrlInput");

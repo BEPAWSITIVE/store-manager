@@ -34,17 +34,15 @@ def clean_json_response(text: str) -> Dict[str, Any]:
         raise ValueError(f"Could not extract valid JSON from response: {text[:200]}")
 
 def get_candidate_models() -> List[str]:
-    """Returns official Google Gemini multimodal models starting with fastest gemini-2.0-flash."""
-    configured = get_gemini_model()
-    defaults = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.5-flash", "gemini-1.5-pro"]
-    if configured and configured not in ("gemini-3.5-flash", "gemini-3.8-flash"):
-        defaults.insert(0, configured)
+    """Returns official Google Gemini multimodal models starting with gemini-2.5-flash."""
+    configured = get_gemini_model() or "gemini-2.5-flash"
+    defaults = [configured, "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
     
     # De-duplicate while preserving order
     seen = set()
     result = []
     for m in defaults:
-        if m and m not in seen:
+        if m and m not in ("gemini-3.5-flash", "gemini-3.8-flash") and m not in seen:
             seen.add(m)
             result.append(m)
     return result
@@ -52,7 +50,7 @@ def get_candidate_models() -> List[str]:
 def analyze_product_multi_angle(images: List[Dict[str, Any]], api_key: Optional[str] = None) -> Dict[str, Any]:
     """
     Analyzes multiple photos of a product (front, back, expiry/barcode, side)
-    using Gemini multimodal AI (gemini-2.0-flash / gemini-1.5-flash).
+    using Gemini multimodal AI with gemini-2.5-flash.
     
     images: list of dicts: [{'angle': 'front', 'path': Path(...), 'url': '/static/...'}, ...]
     """
@@ -126,7 +124,7 @@ Return ONLY a valid JSON object matching this schema:
 """
         contents.append(prompt)
 
-        # Try candidate models with gemini-3.5-flash first
+        # Try candidate models with gemini-2.5-flash first
         last_error = None
         for model_name in get_candidate_models():
             try:
@@ -159,7 +157,7 @@ Return ONLY a valid JSON object matching this schema:
 
 def count_rack_boxes_ai(image_path: Path) -> Dict[str, Any]:
     """
-    Counts boxes, cartons, or units on a shelf/rack using Gemini Multimodal (gemini-3.5-flash).
+    Counts boxes, cartons, or units on a shelf/rack using Gemini Multimodal (gemini-2.5-flash).
     Draws highlighted bounding boxes and returns count + annotated image.
     """
     api_key = get_gemini_api_key()
