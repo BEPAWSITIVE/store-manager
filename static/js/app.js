@@ -214,10 +214,12 @@ function initAuthGuard() {
     }
   }
 
-  // Role routing enforcement
-  if (user.role === "billing" && (path === "/" || path === "/scan" || path === "/inventory" || path === "/review")) {
-    window.location.href = "/billing";
+  // On phone screens (< 768px), billing section is hidden; redirect to /scan
+  if (window.innerWidth < 768 && path === "/billing") {
+    window.location.href = "/scan";
+    return;
   }
+  // All logged-in staff have full access to all sections on desktop/laptop. No forced restrictions.
 }
 
 function logoutStaff() {

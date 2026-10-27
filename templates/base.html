@@ -55,7 +55,8 @@
         </div>
       </a>
 
-      <!-- Right: Role Pill, Settings & Logout -->
+      <!-- Right: Role Pill, Settings & Logout (Only visible when logged in) -->
+      {% if active_tab != 'login' %}
       <div class="flex items-center space-x-2.5 sm:space-x-3">
         <!-- Notifications Bell with Red Badge -->
         <button type="button" onclick="openAlertsModal()" class="relative p-2 text-slate-600 hover:text-slate-900 rounded-xl hover:bg-slate-50 transition-colors" title="Notifications">
@@ -76,6 +77,7 @@
           <i data-lucide="log-out" class="w-4.5 h-4.5"></i>
         </button>
       </div>
+      {% endif %}
     </header>
 
     <!-- Main Content Area (Fills middle height without scrolling base container) -->
@@ -83,7 +85,8 @@
       {% block content %}{% endblock %}
     </main>
 
-    <!-- Bottom Navigation Bar (Responsive on Mobile and Laptop) -->
+    <!-- Bottom Navigation Bar (Hidden on login page, Billing hidden on phone view) -->
+    {% if active_tab != 'login' %}
     <nav class="w-full bg-white border-t border-slate-100 px-4 md:px-8 pt-1.5 pb-2 flex items-center justify-around z-30 flex-shrink-0 relative">
       <div class="w-full max-w-xl mx-auto flex items-center justify-around">
         <!-- 1. Scan -->
@@ -98,8 +101,8 @@
           <span class="text-[10px]">Stock</span>
         </a>
 
-        <!-- 3. Billing -->
-        <a href="/billing" class="flex flex-col items-center justify-center py-1 w-14 {% if active_tab == 'billing' %} text-[#2563eb] font-bold {% else %} text-slate-500 hover:text-slate-900 {% endif %}">
+        <!-- 3. Billing (Hidden on phone view, visible on desktop/laptop) -->
+        <a href="/billing" class="hidden md:flex flex-col items-center justify-center py-1 w-14 {% if active_tab == 'billing' %} text-[#2563eb] font-bold {% else %} text-slate-500 hover:text-slate-900 {% endif %}">
           <i data-lucide="receipt" class="w-5 h-5 mb-0.5 stroke-[2.2]"></i>
           <span class="text-[10px]">Billing</span>
         </a>
@@ -117,6 +120,7 @@
         </button>
       </div>
     </nav>
+    {% endif %}
 
   </div>
 
