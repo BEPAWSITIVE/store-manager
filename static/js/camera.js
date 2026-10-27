@@ -14,10 +14,14 @@ function initCameraSystem() {
 
 async function startCamera() {
   const video = document.getElementById("cameraFeed");
-  const fallback = document.getElementById("cameraFallbackImg");
+  const loader = document.getElementById("cameraLoadingPlaceholder");
+  const title = document.getElementById("cameraLoadingTitle");
+  const desc = document.getElementById("cameraLoadingDesc");
+  const retryBtn = document.getElementById("retryCameraBtn");
 
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    if (fallback) fallback.classList.remove("hidden");
+    if (title) title.innerText = "Camera Not Supported";
+    if (desc) desc.innerText = "Please upload photos using the gallery button below.";
     return;
   }
 
@@ -38,12 +42,28 @@ async function startCamera() {
     videoStream = await navigator.mediaDevices.getUserMedia(constraints);
     if (video) {
       video.srcObject = videoStream;
-      await video.play();
-      if (fallback) fallback.classList.add("hidden");
+      video.onloadedmetadata = async () => {
+        try {
+          await video.play();
+          if (loader) loader.classList.add("hidden");
+        } catch (e) {
+          console.warn("Video play failed:", e);
+        }
+      };
+      // Fallback check in case metadata already loaded
+      setTimeout(async () => {
+        try {
+          if (video.paused) await video.play();
+          if (loader && video.videoWidth > 0) loader.classList.add("hidden");
+        } catch (e) {}
+      }, 600);
     }
   } catch (err) {
-    console.warn("Camera access error, fallback image active:", err);
-    if (fallback) fallback.classList.remove("hidden");
+    console.warn("Camera access error:", err);
+    if (loader) loader.classList.remove("hidden");
+    if (title) title.innerText = "Camera Access Blocked";
+    if (desc) desc.innerText = "Allow camera access in your browser, or upload photos with the gallery icon.";
+    if (retryBtn) retryBtn.classList.remove("hidden");
   }
 }
 
@@ -84,24 +104,19 @@ function triggerShutterFlash() {
 }
 
 /**
- * Capture a photo frame from the camera stream or fallback
+ * Capture a photo frame strictly from the live video stream (NO fallback to stock images)
  */
 function grabCurrentFrameBase64() {
   const video = document.getElementById("cameraFeed");
-  const canvas = document.createElement("canvas");
-
-  if (video && video.videoWidth && video.readyState >= 2) {
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-  } else {
-    const fallback = document.getElementById("cameraFallbackImg");
-    canvas.width = fallback ? (fallback.naturalWidth || 640) : 640;
-    canvas.height = fallback ? (fallback.naturalHeight || 800) : 800;
-    const ctx = canvas.getContext("2d");
-    if (fallback) ctx.drawImage(fallback, 0, 0, canvas.width, canvas.height);
+  if (!video || !video.videoWidth || !video.videoHeight || video.readyState < 2) {
+    return null;
   }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
   return canvas.toDataURL("image/jpeg", 0.9);
 }
@@ -110,11 +125,21 @@ function grabCurrentFrameBase64() {
  * Click Shutter Button: Only triggered by explicitly tapping the photo button
  */
 function clickShutterPhoto() {
-  triggerShutterFlash();
+  const video = document.getElementById("cameraFeed");
+  if (!video || !video.videoWidth || video.readyState < 2) {
+    showToast("Camera feed is starting, please tap again in a moment.", "warning");
+    return;
+  }
 
   const base64Data = grabCurrentFrameBase64();
+  if (!base64Data) {
+    showToast("Could not capture frame from camera. Please tap again.", "warning");
+    return;
+  }
+
+  triggerShutterFlash();
+
   const nextIndex = capturedPhotos.length + 1;
-  
   let angleLabel = `Angle ${nextIndex}`;
   if (nextIndex === 1) angleLabel = "Front View";
   else if (nextIndex === 2) angleLabel = "Back & Details";
@@ -240,12 +265,12 @@ function handleMultiPhotoUpload(event) {
 
 /**
  * Sends all captured photos to AI for multimodal analysis.
- * NOTE: Does NOT show the model name like "Gemini 3.5 Flash" during processing!
+ * NOTE: Does NOT show the model name during processing!
  */
 async function submitAllPhotosForAnalysis() {
   if (capturedPhotos.length === 0) {
-    // If no photos snapped yet, snap the current view as photo 1
-    clickShutterPhoto();
+    showToast("Please tap the shutter button to click at least 1 photo first", "warning");
+    return;
   }
 
   const overlay = document.getElementById("analyzingOverlay");
@@ -255,6 +280,28 @@ async function submitAllPhotosForAnalysis() {
   if (overlay) overlay.classList.remove("hidden");
   if (loadingTitle) loadingTitle.innerText = "Analyzing product photos...";
   if (loadingSubtitle) loadingSubtitle.innerText = `Extracting details from ${capturedPhotos.length} angle photo(s)...`;
+
+  // Client-side barcode detection from photos using device BarcodeDetector (if available on phone)
+  let detectedBarcode = "";
+  if ('BarcodeDetector' in window) {
+    try {
+      const detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'qr_code'] });
+      for (const p of capturedPhotos) {
+        const img = new Image();
+        img.src = p.dataUrl;
+        await new Promise(r => img.onload = r);
+        const barcodes = await detector.detect(img);
+        if (barcodes && barcodes.length > 0) {
+          detectedBarcode = barcodes[0].rawValue;
+          break;
+        }
+      }
+    } catch (e) {
+      console.debug("Native barcode detector notice:", e);
+    }
+  }
+
+  const savedApiKey = localStorage.getItem("store_gemini_api_key") || "";
 
   const payload = {
     images: capturedPhotos.map(p => ({
@@ -266,7 +313,10 @@ async function submitAllPhotosForAnalysis() {
   try {
     const response = await fetch("/api/scanner/analyze-batch", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Gemini-Api-Key": savedApiKey
+      },
       body: JSON.stringify(payload)
     });
 
@@ -275,7 +325,6 @@ async function submitAllPhotosForAnalysis() {
     if (data.success && data.analysis) {
       const p = data.analysis;
 
-      // Extract ONLY what was actually detected - no fake pre-filled data!
       const reviewData = {
         name: p.name || "",
         brand: p.brand || "",
@@ -284,9 +333,10 @@ async function submitAllPhotosForAnalysis() {
         batch_no: p.batch_no || "",
         net_weight: p.net_weight || "",
         mrp: (p.mrp && parseFloat(p.mrp) > 0) ? parseFloat(p.mrp) : "",
-        barcode: p.barcode || "",
+        barcode: p.barcode || detectedBarcode || "",
         quantity: (p.quantity && parseInt(p.quantity) > 0) ? parseInt(p.quantity) : 1,
         location: p.location || "",
+        is_ai_live: !!p.is_ai_live,
         primary_image: data.primary_image || capturedPhotos[0].dataUrl,
         angle_images: data.angle_images || capturedPhotos.map(cp => cp.dataUrl)
       };
@@ -299,7 +349,7 @@ async function submitAllPhotosForAnalysis() {
     }
   } catch (err) {
     console.warn("Analysis request error:", err);
-    // Even if error occurs, proceed to review with captured photos and blank form (NO fake data!)
+    // Proceed to review with actual captured photos (NO fallback stock photo)
     const blankReviewData = {
       name: "",
       brand: "",
@@ -308,10 +358,11 @@ async function submitAllPhotosForAnalysis() {
       batch_no: "",
       net_weight: "",
       mrp: "",
-      barcode: "",
+      barcode: detectedBarcode || "",
       quantity: 1,
       location: "",
-      primary_image: capturedPhotos[0] ? capturedPhotos[0].dataUrl : "/static/uploads/store_shelf_preview.jpg",
+      is_ai_live: false,
+      primary_image: capturedPhotos[0] ? capturedPhotos[0].dataUrl : "",
       angle_images: capturedPhotos.map(cp => cp.dataUrl)
     };
     sessionStorage.setItem("captured_product_data", JSON.stringify(blankReviewData));

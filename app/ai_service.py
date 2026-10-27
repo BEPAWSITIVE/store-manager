@@ -34,9 +34,12 @@ def clean_json_response(text: str) -> Dict[str, Any]:
         raise ValueError(f"Could not extract valid JSON from response: {text[:200]}")
 
 def get_candidate_models() -> List[str]:
-    """Returns candidate models starting with the user's configured model (gemini-3.5-flash)."""
+    """Returns official Google Gemini multimodal models starting with fastest gemini-2.0-flash."""
     configured = get_gemini_model()
-    defaults = [configured, "gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+    defaults = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.5-flash", "gemini-1.5-pro"]
+    if configured and configured not in ("gemini-3.5-flash", "gemini-3.8-flash"):
+        defaults.insert(0, configured)
+    
     # De-duplicate while preserving order
     seen = set()
     result = []
@@ -46,24 +49,24 @@ def get_candidate_models() -> List[str]:
             result.append(m)
     return result
 
-def analyze_product_multi_angle(images: List[Dict[str, Any]]) -> Dict[str, Any]:
+def analyze_product_multi_angle(images: List[Dict[str, Any]], api_key: Optional[str] = None) -> Dict[str, Any]:
     """
     Analyzes multiple photos of a product (front, back, expiry/barcode, side)
-    using Gemini multimodal AI with gemini-3.5-flash.
+    using Gemini multimodal AI (gemini-2.0-flash / gemini-1.5-flash).
     
     images: list of dicts: [{'angle': 'front', 'path': Path(...), 'url': '/static/...'}, ...]
     """
-    api_key = get_gemini_api_key()
+    effective_key = (api_key or "").strip() or get_gemini_api_key()
     
     # If no API key is set, use intelligent mock response
-    if not api_key:
+    if not effective_key:
         return get_mock_product_analysis(images)
     
     try:
         from google import genai
         from google.genai import types
         
-        client = genai.Client(api_key=api_key)
+        client = genai.Client(api_key=effective_key)
         
         contents = []
         angle_labels = []

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Body
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Body, Request
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 from pathlib import Path
@@ -118,9 +118,12 @@ async def analyze_product(payload: ProductAnalyzeRequest):
     }
 
 @router.post("/analyze-batch")
-async def analyze_batch(payload: BatchAnalyzeRequest):
+async def analyze_batch(payload: BatchAnalyzeRequest, request: Request):
     if not payload.images:
         raise HTTPException(status_code=400, detail="No photos provided for analysis.")
+
+    # Check for client-provided API key via header
+    client_api_key = request.headers.get("x-gemini-api-key") or ""
 
     processed_angles = []
     saved_urls = []
@@ -140,7 +143,7 @@ async def analyze_batch(payload: BatchAnalyzeRequest):
     if not processed_angles:
         raise HTTPException(status_code=400, detail="Failed to save captured photos.")
 
-    analysis = analyze_product_multi_angle(processed_angles)
+    analysis = analyze_product_multi_angle(processed_angles, api_key=client_api_key)
     primary_image = saved_urls[0] if saved_urls else ""
     return {
         "success": True,

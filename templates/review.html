@@ -25,6 +25,18 @@
     </div>
   </div>
 
+  <!-- AI Extraction Notice (Only appears when Gemini API key is missing) -->
+  <div id="aiKeyNotice" class="hidden p-3 rounded-2xl bg-blue-50/80 border border-blue-200/70 text-slate-800 text-xs flex items-start space-x-2.5">
+    <i data-lucide="sparkles" class="w-4 h-4 text-[#2563eb] flex-shrink-0 mt-0.5"></i>
+    <div class="flex-1 min-w-0">
+      <div class="font-extrabold text-[#2563eb]">Auto-Extraction Notice</div>
+      <div class="text-[11px] text-slate-600 mt-0.5 leading-snug">
+        Photos saved! To automatically extract brand, price, and expiry with AI, configure your Gemini API Key in 
+        <button type="button" onclick="openSettingsModal(); switchSettingsTab('gemini');" class="underline font-extrabold text-[#2563eb]">Settings</button>.
+      </div>
+    </div>
+  </div>
+
   <!-- Review Form Cards (Only Populated with Captured Details) -->
   <form id="reviewForm" onsubmit="event.preventDefault(); submitVerifiedStock();" class="space-y-2.5 pb-2">
     

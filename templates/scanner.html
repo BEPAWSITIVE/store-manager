@@ -9,8 +9,17 @@
     <!-- Live Camera Video Stream -->
     <video id="cameraFeed" autoplay playsinline muted class="absolute inset-0 w-full h-full object-cover"></video>
 
-    <!-- Fallback Store Shelf View (When camera permissions not granted) -->
-    <img id="cameraFallbackImg" src="/static/uploads/store_shelf_preview.jpg" alt="Store Shelf Camera View" class="absolute inset-0 w-full h-full object-cover">
+    <!-- Camera Initializing & Permission State Overlay (NO fake store shelf image) -->
+    <div id="cameraLoadingPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950 text-white z-10 p-6 text-center">
+      <div class="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center mb-3 animate-pulse">
+        <i data-lucide="camera" class="w-7 h-7 text-blue-400"></i>
+      </div>
+      <h4 id="cameraLoadingTitle" class="text-sm font-bold text-white mb-1">Starting Camera...</h4>
+      <p id="cameraLoadingDesc" class="text-xs text-slate-400 max-w-xs">Please allow camera permissions if prompted</p>
+      <button type="button" onclick="startCamera()" id="retryCameraBtn" class="hidden mt-3 px-4 py-2 rounded-xl bg-[#2563eb] text-white text-xs font-bold shadow-md">
+        Retry Camera Access
+      </button>
+    </div>
 
     <!-- Flash Effect Layer -->
     <div id="flashEffectLayer" class="flash-effect-layer"></div>

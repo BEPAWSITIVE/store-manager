@@ -38,6 +38,17 @@ function initReviewPage() {
       // Render the photos clicked by the user
       renderCapturedPhotos(data);
 
+      // Show notice if Gemini AI key is not yet configured
+      const notice = document.getElementById("aiKeyNotice");
+      if (notice) {
+        if (!data.is_ai_live && !data.name) {
+          notice.classList.remove("hidden");
+          if (window.lucide) lucide.createIcons();
+        } else {
+          notice.classList.add("hidden");
+        }
+      }
+
     } catch (e) {
       console.warn("Could not parse stored captured product data", e);
       resetReviewForm();

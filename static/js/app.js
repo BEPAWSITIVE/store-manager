@@ -110,6 +110,10 @@ async function fetchSettingsStatus() {
       if (input && data.has_api_key && !input.value) {
         input.placeholder = `Configured: ${data.masked_api_key}`;
       }
+      const localKey = localStorage.getItem("store_gemini_api_key");
+      if (localKey && input && !input.value) {
+        input.value = localKey;
+      }
 
       const modelSelect = document.getElementById("geminiModelSelect");
       if (modelSelect && data.model) {
@@ -126,7 +130,12 @@ async function saveGeminiApiKey() {
   const modelSelect = document.getElementById("geminiModelSelect");
   
   const key = input ? input.value.trim() : "";
-  const model = modelSelect ? modelSelect.value : "gemini-3.5-flash";
+  const model = modelSelect ? modelSelect.value : "gemini-2.0-flash";
+
+  if (key) {
+    localStorage.setItem("store_gemini_api_key", key);
+  }
+  localStorage.setItem("store_gemini_model", model);
 
   const btn = document.getElementById("saveApiKeyBtn");
   if (btn) btn.disabled = true;
