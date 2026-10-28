@@ -21,10 +21,20 @@ def save_base64_image(base64_str: str, prefix: str = "img") -> Tuple[str, Path]:
     
     img_bytes = base64.b64decode(base64_str)
     filename = f"{prefix}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}.jpg"
-    filepath = UPLOAD_DIR / filename
     
-    with open(filepath, "wb") as f:
-        f.write(img_bytes)
+    # Try primary UPLOAD_DIR, with fallback to tempdir if read-only
+    target_dir = UPLOAD_DIR
+    try:
+        target_dir.mkdir(parents=True, exist_ok=True)
+        filepath = target_dir / filename
+        with open(filepath, "wb") as f:
+            f.write(img_bytes)
+    except Exception:
+        target_dir = Path(tempfile.gettempdir()) / "uploads"
+        target_dir.mkdir(parents=True, exist_ok=True)
+        filepath = target_dir / filename
+        with open(filepath, "wb") as f:
+            f.write(img_bytes)
         
     return f"/static/uploads/{filename}", filepath
 

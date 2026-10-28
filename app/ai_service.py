@@ -139,6 +139,10 @@ Return ONLY a valid JSON object matching this schema:
                 result = clean_json_response(response.text)
                 result["is_ai_live"] = True
                 result["model_used"] = model_name
+                if "summary" in result and "ai_summary" not in result:
+                    result["ai_summary"] = result["summary"]
+                elif "ai_summary" in result and "summary" not in result:
+                    result["summary"] = result["ai_summary"]
                 return result
             except Exception as model_err:
                 last_error = model_err
@@ -150,7 +154,9 @@ Return ONLY a valid JSON object matching this schema:
     except Exception as e:
         print(f"[AI Service Error - Product Analysis] {e}")
         mock = get_mock_product_analysis(images)
-        mock["ai_summary"] += f" (Note: Gemini fallback triggered: {str(e)[:80]})"
+        note = f" (Note: Gemini fallback triggered: {str(e)[:80]})"
+        mock["summary"] = (mock.get("summary") or "") + note
+        mock["ai_summary"] = (mock.get("ai_summary") or mock.get("summary") or "") + note
         mock["is_ai_live"] = False
         mock["model_used"] = get_gemini_model()
         return mock
@@ -260,6 +266,7 @@ Return ONLY a valid JSON object matching this schema:
 def get_mock_product_analysis(images: List[Dict[str, Any]]) -> Dict[str, Any]:
     """Fallback when Gemini API key is missing or model call fails. Returns blank fields so no fake data is prefilled."""
     angle_count = len(images)
+    default_summary = f"Captured {angle_count} angle photo(s). Live packaging analysis requires GEMINI_API_KEY."
     return {
         "name": "",
         "brand": "",
@@ -275,7 +282,8 @@ def get_mock_product_analysis(images: List[Dict[str, Any]]) -> Dict[str, Any]:
         "quantity": 1,
         "location": "",
         "confidence": 0.0,
-        "summary": f"Captured {angle_count} angle photo(s). Live packaging analysis requires GEMINI_API_KEY.",
+        "summary": default_summary,
+        "ai_summary": default_summary,
         "is_ai_live": False,
         "model_used": ""
     }

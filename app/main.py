@@ -1,5 +1,6 @@
 import os
-from fastapi import FastAPI, Request
+import tempfile
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, FileResponse
@@ -46,6 +47,9 @@ async def serve_upload(filename: str):
     tmp_file = UPLOAD_DIR / filename
     if tmp_file.exists():
         return FileResponse(tmp_file)
+    fallback_file = Path(tempfile.gettempdir()) / "uploads" / filename
+    if fallback_file.exists():
+        return FileResponse(fallback_file)
     # Check in local static uploads
     static_file = static_dir / "uploads" / filename
     if static_file.exists():

@@ -8,13 +8,18 @@ load_dotenv(BASE_DIR / ".env")
 
 def get_upload_dir() -> Path:
     # On Vercel / serverless, write to /tmp/uploads
-    if os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"):
+    if os.getenv("VERCEL") or os.getenv("VERCEL_ENV") or os.getenv("AWS_LAMBDA_FUNCTION_NAME") or os.getenv("LAMBDA_TASK_ROOT"):
         d = Path(tempfile.gettempdir()) / "uploads"
         d.mkdir(parents=True, exist_ok=True)
         return d
     try:
         d = BASE_DIR / "static" / "uploads"
         d.mkdir(parents=True, exist_ok=True)
+        # Test write capability to ensure filesystem isn't read-only
+        test_file = d / f".test_{os.getpid()}"
+        with open(test_file, "w") as f:
+            f.write("ok")
+        test_file.unlink(missing_ok=True)
         return d
     except Exception:
         d = Path(tempfile.gettempdir()) / "uploads"
