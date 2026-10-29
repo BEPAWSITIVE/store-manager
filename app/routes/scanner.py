@@ -50,6 +50,10 @@ class TransferStockRequest(BaseModel):
     angle_images: Optional[List[str]] = []
     rack_image: Optional[str] = ""
     rack_box_count: Optional[int] = 0
+    units_per_package: Optional[int] = 1
+    package_count: Optional[int] = 1
+    quantity_calculation: Optional[str] = ""
+    detected_packaging_type: Optional[str] = ""
     ai_confidence: Optional[float] = 0.95
     ai_summary: Optional[str] = ""
 

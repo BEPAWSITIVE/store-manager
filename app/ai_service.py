@@ -78,26 +78,52 @@ def analyze_product_multi_angle(images: List[Dict[str, Any]], api_key: Optional[
             buf = io.BytesIO()
             pil_img.save(buf, format="JPEG", quality=85)
             contents.append(types.Part.from_bytes(data=buf.getvalue(), mime_type="image/jpeg"))
-            contents.append(f"Image {idx+1} is the {angle.upper()} angle view.")
+            contents.append(f"Image {idx+1} is the {angle.upper()} angle view. It may show a single product item, label text, an outer cardboard box / shipper / carton with unit counts, or a rack / shelf with stacked boxes or units.")
 
         prompt = f"""
 You are an expert AI Retail Store Scanner and Product Cataloging System.
-You are given {len(images)} photos of the same retail item or product shelf/rack captured from angles: {', '.join(angle_labels)}.
+You are given {len(images)} photos of a retail item, wholesale carton, cardboard box, shipper, bundle, or store shelf/rack captured from angles: {', '.join(angle_labels)}.
 
-Carefully inspect ALL captured photos across all angles to accurately extract only what is actually visible on the packaging or shelf:
+Carefully inspect ALL captured photos across all angles to accurately extract packaging details and AUTOMATICALLY CALCULATE INVENTORY QUANTITY:
+
 1. Product Name: Complete and clean retail product title. If cannot be read, return empty string "".
 2. Brand Name: Manufacturer or brand name. If not visible, return empty string "".
 3. Category: Choose best from: Grocery, Snacks, Beverages, Personal Care, Household & Cleaning, Dairy, Bakery, Electronics, Medicine, General. If not certain, return empty string "".
 4. Net Weight / Quantity: e.g. '500g', '1L', '75g', 'Pack of 4'. If not visible, return empty string "".
-5. MRP / Price: Maximum retail price (number only, 0.0 if not visible).
+5. MRP / Price: Maximum retail price of a single consumer unit (number only, 0.0 if not visible).
 6. Estimated Cost Price: Wholesale / purchase cost (0.0 if not visible).
 7. Manufacturing Date: Format 'DD/MM/YYYY' or 'YYYY-MM-DD' if visible, else empty string "".
 8. Expiry Date: Format 'DD/MM/YYYY' or 'YYYY-MM-DD' if visible, else empty string "".
 9. Batch / Lot Number: Printed batch code if detected, else empty string "".
 10. Barcode: Digits of the EAN-13, UPC, or barcode if visible, else empty string "".
-11. Verified Count: Total number of units/boxes visible (e.g. if a shelf, box carton, or rack is pictured, count the items; default 1 for a single product item).
-12. Shelf Location: If any rack/shelf label or aisle tag is visible (e.g. 'Rack C-04'), extract it, else empty string "".
-13. Summary: Brief 1-sentence description of the item.
+11. Location: Shelf or rack location if visible on an aisle/rack tag (e.g. 'Rack B-03'), else empty string "".
+
+12. CRITICAL QUANTITY & BUNDLE / CARDBOARD BOX / RACK CALCULATION:
+   Inspect all captured photos for outer cardboard boxes, master cartons, shippers, bundles, shrink-wrap packs, and shelf/rack stacks:
+   - Case A (Cardboard Box / Shipper / Carton / Bundle Label):
+     Check for printed unit counts such as:
+     * "Contains: 24 Packs" / "24 Units" / "24 N" / "Net Qty: 24 pcs" / "Qty: 50"
+     * "Units per Carton: 48" / "Pack of 12" / "Bundle of 10" / "10 x 5 = 50 pcs"
+     * "Outer Carton: 36 units" / "Inner: 6 x 4 packs"
+     Identify `units_per_package` from this text (e.g., 24).
+   - Case B (Rack / Shelf / Stack Counting):
+     Check if a photo shows multiple cartons/boxes stacked on a rack or pallet, or individual units lined up on a shelf:
+     * Count the number of visible cartons/boxes (`package_count`).
+     * If individual retail units are visible on a rack/shelf without outer boxes, count the visible units directly.
+   - Case C (Total Calculation):
+     * If a cardboard box/carton mentions units per box (e.g., 24) and multiple boxes are pictured on a rack (e.g., 5 boxes), calculate `quantity = package_count * units_per_package` (e.g., 5 * 24 = 120).
+     * If 1 cardboard box/carton is pictured mentioning "Contains 24 packs", `quantity = 24`.
+     * If a bundle or multipack is pictured (e.g. shrink-wrapped pack of 6), `quantity = 6`.
+     * If loose units are pictured on a shelf/rack, `quantity = number of units counted`.
+     * If only a single individual retail product item is pictured with no bundle/carton/rack, default `quantity = 1`.
+   - Provide a clear, human-readable calculation description in `quantity_calculation`, e.g.:
+     * "3 cartons on rack × 24 units/carton = 72 total units"
+     * "Cardboard box label: 'Contains 24 packs' = 24 total units"
+     * "Counted 15 visible units on shelf = 15 total units"
+     * "Single product item = 1 unit"
+   - Identify `detected_packaging_type`: one of "cardboard_box", "rack_shelf", "bundle", "multipack", "single"
+
+13. Summary: Brief 1-sentence description of the item including packaging and calculated stock count.
 
 CRITICAL INSTRUCTIONS:
 - Do NOT hallucinate or make up details that are not visible.
@@ -117,6 +143,10 @@ Return ONLY a valid JSON object matching this schema:
     "batch_no": "string",
     "barcode": "string",
     "quantity": 1,
+    "units_per_package": 1,
+    "package_count": 1,
+    "quantity_calculation": "string",
+    "detected_packaging_type": "string",
     "location": "string",
     "confidence": 0.95,
     "summary": "string"
@@ -139,6 +169,56 @@ Return ONLY a valid JSON object matching this schema:
                 result = clean_json_response(response.text)
                 result["is_ai_live"] = True
                 result["model_used"] = model_name
+
+                # Clean and sanitize inventory calculation values
+                try:
+                    units_per_pkg = max(1, int(result.get("units_per_package") or 1))
+                except Exception:
+                    units_per_pkg = 1
+
+                try:
+                    pkg_cnt = max(1, int(result.get("package_count") or 1))
+                except Exception:
+                    pkg_cnt = 1
+
+                try:
+                    qty = int(result.get("quantity") or 0)
+                except Exception:
+                    qty = 0
+
+                # If quantity wasn't set or is less than units_per_pkg * pkg_cnt, calculate it
+                if qty <= 0:
+                    qty = max(1, units_per_pkg * pkg_cnt)
+                elif units_per_pkg > 1 and pkg_cnt > 1 and qty == units_per_pkg:
+                    qty = units_per_pkg * pkg_cnt
+
+                result["quantity"] = qty
+                result["units_per_package"] = units_per_pkg
+                result["package_count"] = pkg_cnt
+
+                # Build or preserve quantity calculation description
+                calc_desc = result.get("quantity_calculation") or ""
+                if not calc_desc:
+                    if units_per_pkg > 1 and pkg_cnt > 1:
+                        calc_desc = f"{pkg_cnt} boxes × {units_per_pkg} units/box = {qty} total units"
+                    elif units_per_pkg > 1:
+                        calc_desc = f"Carton label: {units_per_pkg} units = {qty} total units"
+                    elif qty > 1:
+                        calc_desc = f"Counted {qty} units on rack / shelf = {qty} total units"
+                    else:
+                        calc_desc = "Single product item = 1 unit"
+                result["quantity_calculation"] = calc_desc
+
+                pkg_type = result.get("detected_packaging_type") or ""
+                if not pkg_type:
+                    if units_per_pkg > 1:
+                        pkg_type = "cardboard_box"
+                    elif pkg_cnt > 1:
+                        pkg_type = "rack_shelf"
+                    else:
+                        pkg_type = "single"
+                result["detected_packaging_type"] = pkg_type
+
                 if "summary" in result and "ai_summary" not in result:
                     result["ai_summary"] = result["summary"]
                 elif "ai_summary" in result and "summary" not in result:
@@ -280,6 +360,10 @@ def get_mock_product_analysis(images: List[Dict[str, Any]]) -> Dict[str, Any]:
         "barcode": "",
         "sku": "",
         "quantity": 1,
+        "units_per_package": 1,
+        "package_count": 1,
+        "quantity_calculation": "1 unit (Single item default)",
+        "detected_packaging_type": "single",
         "location": "",
         "confidence": 0.0,
         "summary": default_summary,

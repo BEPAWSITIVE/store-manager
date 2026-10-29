@@ -107,9 +107,9 @@
       <!-- Verified Count -->
       <div>
         <label class="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1.5">VERIFIED COUNT</label>
-        <div class="flex items-center space-x-2">
+        <div class="flex items-center space-x-1.5">
           <button type="button" onclick="adjustReviewCount(-1)" class="w-9 h-9 rounded-xl bg-blue-100/80 hover:bg-blue-200 active:scale-95 text-blue-900 font-extrabold text-base flex items-center justify-center transition-all">-</button>
-          <span id="reviewQuantityText" class="text-base font-black text-slate-900 w-8 text-center">1</span>
+          <input type="number" id="reviewQuantityInput" min="1" value="1" oninput="handleQuantityInputChange(this.value)" class="w-16 h-9 rounded-xl bg-blue-50/50 border border-blue-200 text-center text-base font-black text-slate-900 focus:outline-none focus:border-blue-500">
           <button type="button" onclick="adjustReviewCount(1)" class="w-9 h-9 rounded-xl bg-blue-100/80 hover:bg-blue-200 active:scale-95 text-blue-900 font-extrabold text-base flex items-center justify-center transition-all">+</button>
         </div>
       </div>
@@ -120,6 +120,22 @@
         <div class="relative w-full">
           <input type="text" id="reviewLocation" value="" placeholder="Shelf / Rack location" class="w-full px-3 py-2 rounded-xl bg-blue-100/80 text-[#2563eb] font-extrabold text-xs text-center border-0 placeholder:text-blue-400 placeholder:font-medium focus:outline-none focus:ring-1 focus:ring-blue-400">
         </div>
+      </div>
+    </div>
+
+    <!-- AUTO-CALCULATION BANNER (Appears when carton/box/rack/bundle units were calculated) -->
+    <div id="quantityCalculationBanner" class="hidden p-3 rounded-2xl bg-emerald-50 border border-emerald-200/80 flex items-start space-x-2.5">
+      <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0 mt-0.5">
+        <i data-lucide="calculator" class="w-4 h-4"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center space-x-2">
+          <span id="packagingTypeBadge" class="px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-wide bg-amber-100 text-amber-900 border border-amber-200">Cardboard Box</span>
+          <span class="text-[10px] font-bold text-emerald-800">Auto-Calculated Total Units</span>
+        </div>
+        <p id="quantityCalculationText" class="text-xs font-bold text-emerald-950 mt-1 leading-snug">
+          1 box × 24 units = 24 total units
+        </p>
       </div>
     </div>
 

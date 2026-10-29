@@ -35,6 +35,35 @@ function initReviewPage() {
       }
       updateQuantityDisplay();
 
+      // Show auto-calculation breakdown if detected from cardboard box / rack / bundle
+      const calcBanner = document.getElementById("quantityCalculationBanner");
+      const calcText = document.getElementById("quantityCalculationText");
+      const pkgBadge = document.getElementById("packagingTypeBadge");
+
+      if (data.quantity_calculation && calcBanner && calcText) {
+        calcText.innerText = data.quantity_calculation;
+        if (pkgBadge) {
+          const type = (data.detected_packaging_type || "").toLowerCase();
+          if (type.includes("cardboard") || type.includes("box") || type.includes("shipper")) {
+            pkgBadge.innerText = "Cardboard Box / Shipper";
+            pkgBadge.className = "px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-wide bg-amber-100 text-amber-900 border border-amber-200";
+          } else if (type.includes("rack") || type.includes("shelf")) {
+            pkgBadge.innerText = "Rack / Shelf Count";
+            pkgBadge.className = "px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-wide bg-blue-100 text-blue-900 border border-blue-200";
+          } else if (type.includes("bundle") || type.includes("multi")) {
+            pkgBadge.innerText = "Bundle / Multi-pack";
+            pkgBadge.className = "px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-wide bg-purple-100 text-purple-900 border border-purple-200";
+          } else {
+            pkgBadge.innerText = "Calculated Stock";
+            pkgBadge.className = "px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-wide bg-emerald-100 text-emerald-900 border border-emerald-200";
+          }
+        }
+        calcBanner.classList.remove("hidden");
+        if (window.lucide) lucide.createIcons();
+      } else if (calcBanner) {
+        calcBanner.classList.add("hidden");
+      }
+
       // Render the photos clicked by the user
       renderCapturedPhotos(data);
 
@@ -106,9 +135,22 @@ function adjustReviewCount(delta) {
   updateQuantityDisplay();
 }
 
+function handleQuantityInputChange(val) {
+  const parsed = parseInt(val);
+  if (!isNaN(parsed) && parsed > 0) {
+    currentQuantity = parsed;
+    const textEl = document.getElementById("reviewQuantityText");
+    if (textEl) textEl.innerText = currentQuantity;
+  }
+}
+
 function updateQuantityDisplay() {
-  const el = document.getElementById("reviewQuantityText");
-  if (el) el.innerText = currentQuantity;
+  const textEl = document.getElementById("reviewQuantityText");
+  const inputEl = document.getElementById("reviewQuantityInput");
+  if (textEl) textEl.innerText = currentQuantity;
+  if (inputEl && parseInt(inputEl.value) !== currentQuantity) {
+    inputEl.value = currentQuantity;
+  }
 }
 
 async function submitVerifiedStock() {
@@ -135,12 +177,16 @@ async function submitVerifiedStock() {
   // Retain image from session if present
   let primaryImage = "";
   let angleImages = [];
+  let aiSummary = "Verified and cataloged into Stock Manager";
   const stored = sessionStorage.getItem("captured_product_data");
   if (stored) {
     try {
       const data = JSON.parse(stored);
       if (data.primary_image) primaryImage = data.primary_image;
       if (Array.isArray(data.angle_images)) angleImages = data.angle_images;
+      if (data.quantity_calculation) {
+        aiSummary = `Auto-calculated: ${data.quantity_calculation}`;
+      }
     } catch (e) {}
   }
 
@@ -166,7 +212,7 @@ async function submitVerifiedStock() {
     rack_image: "",
     rack_box_count: currentQuantity,
     ai_confidence: 0.98,
-    ai_summary: "Verified and cataloged into Stock Manager"
+    ai_summary: aiSummary
   };
 
   try {
