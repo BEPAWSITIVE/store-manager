@@ -1,165 +1,162 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="flex-1 min-h-0 flex flex-col md:flex-row bg-slate-50 relative overflow-hidden">
+<div class="flex-1 min-h-0 flex flex-col md:flex-row bg-[#f8fafc] relative overflow-hidden">
 
-  <!-- Left Side: Products Catalog & Quick Search (Responsive: 1 col on mobile, 2-3 cols on laptop) -->
-  <div class="flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden">
+  <!-- CENTER AREA: Products Catalog & Quick Search (Flex-1) -->
+  <div class="flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden p-3.5 sm:p-5 lg:p-6 space-y-4">
     
-    <!-- Top Billing Header & Quick Search -->
-    <div class="px-4 pt-3.5 pb-2.5 bg-white border-b border-slate-100 flex-shrink-0">
-      <div class="flex items-center justify-between">
-        <div>
-          <h2 class="text-base sm:text-lg font-black text-slate-900 tracking-tight flex items-center space-x-1.5">
-            <i data-lucide="receipt" class="w-5 h-5 text-[#2563eb]"></i>
-            <span>Billing POS Terminal</span>
-          </h2>
-          <p class="text-[11px] text-slate-500 font-medium">Real-time stock deduction with Supabase</p>
-        </div>
-
-        <div class="flex items-center space-x-2">
-          <!-- View Invoices History Button -->
-          <button type="button" onclick="openInvoiceHistoryModal()" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center space-x-1.5 transition-colors" title="Recent Invoices">
-            <i data-lucide="history" class="w-3.5 h-3.5"></i>
-            <span>Bills History</span>
-          </button>
-
-          <!-- Reset / Clear Bill -->
-          <button type="button" onclick="resetCurrentBill()" class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-600 font-bold text-xs transition-colors" title="Clear Bill">
-            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
-          </button>
-        </div>
-      </div>
-
-      <!-- Search & Instant Barcode Input -->
-      <div class="mt-2.5 flex items-center space-x-2">
-        <div class="relative flex-1">
-          <input type="text" id="billingSearchInput" oninput="handleBillingSearch(event)" placeholder="Search products by title, brand, or barcode..." class="w-full pl-8 pr-3 py-2 rounded-xl bg-slate-100/90 border-0 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5"></i>
+    <!-- Top Row in Catalog: Search Bar & Top Right Actions (Bills History + Live Date/Time) -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-shrink-0">
+      
+      <!-- Search Input with Scan Barcode Button -->
+      <div class="flex-1 max-w-xl bg-white border border-slate-200/90 rounded-2xl p-1.5 shadow-sm flex items-center space-x-2">
+        <div class="relative flex-1 flex items-center pl-3">
+          <i data-lucide="search" class="w-4.5 h-4.5 text-slate-400 mr-2.5 flex-shrink-0"></i>
+          <input type="text" id="billingSearchInput" oninput="handleBillingSearch(event)" placeholder="Search products by title, brand, or barcode..." class="w-full bg-transparent border-0 text-xs sm:text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0 p-0">
         </div>
         
-        <!-- Barcode Quick Add -->
-        <button type="button" onclick="promptBarcodeScan()" class="px-3.5 py-2 rounded-xl bg-[#2563eb] hover:bg-blue-600 text-white font-bold text-xs flex items-center space-x-1.5 shadow-sm active:scale-95 transition-transform" title="Barcode Scan">
-          <i data-lucide="barcode" class="w-4 h-4"></i>
-          <span class="hidden sm:inline">Scan Barcode</span>
+        <button type="button" onclick="promptBarcodeScan()" class="px-4 py-2.5 rounded-xl bg-[#2563eb] hover:bg-blue-600 text-white font-bold text-xs flex items-center space-x-1.5 shadow-sm shadow-blue-500/20 active:scale-95 transition-all flex-shrink-0" title="Scan Barcode">
+          <i data-lucide="scan-barcode" class="w-4 h-4 stroke-[2.2]"></i>
+          <span>Scan Barcode</span>
         </button>
       </div>
 
-      <!-- Category Filter Chips -->
-      <div id="billingCategoryChips" class="flex items-center space-x-1.5 overflow-x-auto py-2 scrollbar-none">
-        <button type="button" onclick="filterBillingCategory('All')" class="category-chip active px-3 py-1 rounded-full text-[10px] font-extrabold bg-[#2563eb] text-white flex-shrink-0 transition-all">All Items</button>
-        <button type="button" onclick="filterBillingCategory('Breakfast & Spreads')" class="category-chip px-3 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 flex-shrink-0 transition-all">Spreads</button>
-        <button type="button" onclick="filterBillingCategory('Beverages')" class="category-chip px-3 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 flex-shrink-0 transition-all">Beverages</button>
-        <button type="button" onclick="filterBillingCategory('Personal Care')" class="category-chip px-3 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 flex-shrink-0 transition-all">Personal Care</button>
-        <button type="button" onclick="filterBillingCategory('Hygiene & Cleaning')" class="category-chip px-3 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 flex-shrink-0 transition-all">Cleaning</button>
+      <!-- Right Top Actions: Bills History & Live Date/Time Badge (Matches screenshot!) -->
+      <div class="flex items-center space-x-3 flex-shrink-0 self-end sm:self-auto">
+        <!-- Bills History Button -->
+        <button type="button" onclick="openInvoiceHistoryModal()" class="px-4 py-2.5 rounded-2xl bg-white border border-slate-200/90 hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center space-x-2 shadow-sm transition-all" title="View Recent Invoices">
+          <i data-lucide="history" class="w-4 h-4 text-slate-600"></i>
+          <span>Bills History</span>
+        </button>
+
+        <!-- Live Date & Time Badge (Matches screenshot: 27 Oct 2026 04:08 PM) -->
+        <div class="px-3.5 py-1.5 rounded-2xl bg-white border border-slate-200/90 shadow-sm flex items-center space-x-2.5">
+          <i data-lucide="calendar" class="w-4 h-4 text-slate-500 flex-shrink-0"></i>
+          <div class="text-right leading-tight">
+            <div id="liveDateText" class="text-xs font-extrabold text-slate-800">27 Oct 2026</div>
+            <div id="liveTimeText" class="text-[11px] font-bold text-slate-400 mt-0.5">04:08 PM</div>
+          </div>
+        </div>
       </div>
+
     </div>
 
-    <!-- Products Catalog Grid (Responsive 1-col on mobile, 2-3 cols on laptop) -->
-    <div id="billingProductList" class="flex-1 min-h-0 overflow-y-auto p-3.5 sm:p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 content-start pb-24 md:pb-4">
-      <div class="col-span-full text-center py-12 text-slate-400 text-xs">
+    <!-- Category Filter Chips (All Items, Spreads, Beverages, Personal Care, Cleaning) -->
+    <div id="billingCategoryChips" class="flex items-center space-x-2 overflow-x-auto py-1 scrollbar-none flex-shrink-0">
+      <button type="button" onclick="filterBillingCategory('All')" class="category-chip active px-4 py-1.5 rounded-full text-xs font-extrabold bg-[#2563eb] text-white flex-shrink-0 shadow-sm shadow-blue-500/15 transition-all">All Items</button>
+      <button type="button" onclick="filterBillingCategory('Spreads')" class="category-chip px-4 py-1.5 rounded-full text-xs font-semibold bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50 flex-shrink-0 transition-all">Spreads</button>
+      <button type="button" onclick="filterBillingCategory('Beverages')" class="category-chip px-4 py-1.5 rounded-full text-xs font-semibold bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50 flex-shrink-0 transition-all">Beverages</button>
+      <button type="button" onclick="filterBillingCategory('Personal Care')" class="category-chip px-4 py-1.5 rounded-full text-xs font-semibold bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50 flex-shrink-0 transition-all">Personal Care</button>
+      <button type="button" onclick="filterBillingCategory('Cleaning')" class="category-chip px-4 py-1.5 rounded-full text-xs font-semibold bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50 flex-shrink-0 transition-all">Cleaning</button>
+    </div>
+
+    <!-- 4-Column Product Catalog Grid (Matches screenshot!) -->
+    <div id="billingProductList" class="flex-1 min-h-0 overflow-y-auto grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 content-start pr-1 pb-20 md:pb-2">
+      <div class="col-span-full text-center py-16 text-slate-400 text-xs">
         <div class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-        Loading stock from Supabase...
+        Loading products from Stock...
       </div>
     </div>
 
   </div>
 
-  <!-- Right Side: Active Cart & Billing Panel (Drawer on Mobile, Permanent Side Panel on Laptop) -->
-  <div id="billingCartDrawer" class="fixed md:static inset-x-0 bottom-0 z-40 bg-white border-t md:border-t-0 md:border-l border-slate-200 shadow-2xl md:shadow-none rounded-t-3xl md:rounded-none transition-all duration-300 transform translate-y-[calc(100%-68px)] md:translate-y-0 max-h-[85%] md:max-h-full md:w-96 lg:w-[420px] flex flex-col flex-shrink-0">
+  <!-- RIGHT PANEL: Current Bill & Customer Checkout (Matches screenshot!) -->
+  <div id="billingCartDrawer" class="w-full md:w-80 lg:w-[350px] xl:w-[380px] bg-white border-t md:border-t-0 md:border-l border-slate-200/90 shadow-2xl md:shadow-none flex flex-col flex-shrink-0 justify-between p-4 space-y-3.5 overflow-hidden">
     
-    <!-- Drawer Handle on Mobile / Fixed Header on Laptop -->
-    <div onclick="toggleCartDrawer()" class="px-4 py-3 flex items-center justify-between cursor-pointer md:cursor-default border-b border-slate-100 flex-shrink-0 bg-white rounded-t-3xl md:rounded-none">
+    <!-- Cart Header (Receipt icon, Item Count, Total) -->
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100 flex-shrink-0">
       <div class="flex items-center space-x-2.5">
-        <div class="relative">
-          <div class="w-10 h-10 rounded-xl bg-blue-50 text-[#2563eb] flex items-center justify-center font-black">
-            <i data-lucide="shopping-bag" class="w-5 h-5"></i>
-          </div>
-          <span id="cartCountBadge" class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#2563eb] text-white text-[10px] font-black flex items-center justify-center border-2 border-white">0</span>
+        <div class="w-9 h-9 rounded-xl bg-blue-50 text-[#2563eb] flex items-center justify-center flex-shrink-0">
+          <i data-lucide="receipt" class="w-5 h-5"></i>
         </div>
         <div>
-          <div class="text-xs font-black text-slate-900 flex items-center space-x-1">
-            <span id="cartItemsSummaryText">0 Items in Bill</span>
-            <i data-lucide="chevron-up" id="cartDrawerChevron" class="w-3.5 h-3.5 text-slate-400 transition-transform md:hidden"></i>
-          </div>
-          <p class="text-[10px] text-slate-500 font-medium">Customer Checkout & Payment</p>
+          <h3 class="text-xs sm:text-sm font-extrabold text-slate-900 leading-tight" id="cartItemsSummaryText">0 Items in Bill</h3>
+          <p class="text-[10px] text-slate-400 font-medium">Customer Checkout & Payment</p>
         </div>
       </div>
-
       <div class="text-right">
-        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total</div>
-        <div class="text-base font-black text-[#2563eb]" id="cartBottomTotalText">₹0.00</div>
+        <div class="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">TOTAL</div>
+        <div class="text-base sm:text-lg font-black text-[#2563eb]" id="cartBottomTotalText">₹0.00</div>
       </div>
     </div>
 
-    <!-- Expanded Cart Items List & Customer Details -->
-    <div class="flex-1 overflow-y-auto p-4 space-y-4">
+    <!-- Scrollable Middle Section: Items List, Customer Info, Payment Mode, Financial Breakdown -->
+    <div class="flex-1 min-h-0 overflow-y-auto pr-1 space-y-3.5">
       
-      <!-- Cart Items -->
-      <div class="space-y-2">
-        <div class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Current Bill Items</div>
-        <div id="cartItemsList" class="space-y-2 max-h-48 md:max-h-56 overflow-y-auto pr-0.5">
-          <div class="text-center py-6 text-xs text-slate-400 font-medium">No items added to bill yet. Tap + on products to add.</div>
+      <!-- Current Bill Items Section -->
+      <div>
+        <div class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-2">CURRENT BILL ITEMS</div>
+        <div id="cartItemsList" class="space-y-2 max-h-48 overflow-y-auto pr-0.5">
+          <!-- Populated dynamically via billing.js (Empty state or Line Items) -->
         </div>
       </div>
 
-      <!-- Customer Details (Optional) -->
-      <div class="p-3 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
-        <div class="text-[10px] font-extrabold text-slate-600 uppercase tracking-wider">Customer Info (Optional)</div>
+      <!-- Customer Info (Optional) -->
+      <div>
+        <div class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-2">CUSTOMER INFO (OPTIONAL)</div>
         <div class="grid grid-cols-2 gap-2">
-          <input type="text" id="customerNameInput" placeholder="Customer Name" class="bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-blue-500">
-          <input type="tel" id="customerMobileInput" placeholder="Mobile Number" class="bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-blue-500">
+          <div class="relative flex items-center">
+            <i data-lucide="user" class="w-3.5 h-3.5 text-slate-400 absolute left-3 pointer-events-none"></i>
+            <input type="text" id="customerNameInput" placeholder="Customer Name" class="w-full pl-8 pr-2.5 py-2 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500">
+          </div>
+          <div class="relative flex items-center">
+            <i data-lucide="phone" class="w-3.5 h-3.5 text-slate-400 absolute left-3 pointer-events-none"></i>
+            <input type="tel" id="customerMobileInput" placeholder="Mobile Number" class="w-full pl-8 pr-2.5 py-2 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500">
+          </div>
         </div>
       </div>
 
       <!-- Payment Mode -->
-      <div class="space-y-1.5">
-        <div class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Payment Mode</div>
+      <div>
+        <div class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-2">PAYMENT MODE</div>
         <div class="grid grid-cols-3 gap-2">
-          <button type="button" onclick="selectPaymentMode('Cash')" id="payModeCash" class="pay-mode-btn active py-2 rounded-xl border border-blue-500 bg-blue-50 text-blue-700 font-extrabold text-xs flex items-center justify-center space-x-1">
+          <button type="button" onclick="selectPaymentMode('Cash')" id="payModeCash" class="pay-mode-btn active py-2 rounded-xl border-2 border-[#2563eb] bg-blue-50/60 text-[#2563eb] font-bold text-xs flex items-center justify-center space-x-1.5 transition-all">
             <i data-lucide="banknote" class="w-3.5 h-3.5"></i>
             <span>Cash</span>
           </button>
-          <button type="button" onclick="selectPaymentMode('UPI / QR')" id="payModeUpi" class="pay-mode-btn py-2 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold text-xs flex items-center justify-center space-x-1">
+          <button type="button" onclick="selectPaymentMode('UPI / QR')" id="payModeUpi" class="pay-mode-btn py-2 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-xs flex items-center justify-center space-x-1.5 hover:bg-slate-50 transition-all">
             <i data-lucide="qr-code" class="w-3.5 h-3.5"></i>
             <span>UPI / QR</span>
           </button>
-          <button type="button" onclick="selectPaymentMode('Card')" id="payModeCard" class="pay-mode-btn py-2 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold text-xs flex items-center justify-center space-x-1">
+          <button type="button" onclick="selectPaymentMode('Card')" id="payModeCard" class="pay-mode-btn py-2 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-xs flex items-center justify-center space-x-1.5 hover:bg-slate-50 transition-all">
             <i data-lucide="credit-card" class="w-3.5 h-3.5"></i>
             <span>Card</span>
           </button>
         </div>
       </div>
 
-      <!-- Financial Calculation -->
-      <div class="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-100 space-y-1.5 text-xs">
-        <div class="flex items-center justify-between text-slate-600">
+      <!-- Financial Calculation Card -->
+      <div class="p-3.5 rounded-2xl bg-blue-50/40 border border-blue-100/70 space-y-2 text-xs">
+        <div class="flex items-center justify-between text-slate-600 font-medium">
           <span>Subtotal</span>
-          <span id="billSubtotalText" class="font-bold">₹0.00</span>
+          <span id="billSubtotalText" class="font-bold text-slate-800">₹0.00</span>
         </div>
-        <div class="flex items-center justify-between text-slate-600">
+        <div class="flex items-center justify-between text-slate-600 font-medium">
           <span>Discount</span>
-          <div class="flex items-center space-x-1">
-            <span>₹</span>
-            <input type="number" id="billDiscountInput" oninput="calculateBillTotals()" value="0" min="0" class="w-16 bg-white border border-slate-200 rounded px-1 text-right text-xs font-bold">
+          <div class="flex items-center space-x-1 bg-white border border-slate-200 rounded-lg px-2 py-0.5">
+            <span class="text-slate-400 font-semibold text-[11px]">₹</span>
+            <input type="number" id="billDiscountInput" oninput="calculateBillTotals()" value="0" min="0" class="w-12 border-0 p-0 text-right text-xs font-bold text-slate-900 focus:outline-none focus:ring-0">
           </div>
         </div>
-        <div class="flex items-center justify-between text-slate-600">
+        <div class="flex items-center justify-between text-slate-600 font-medium">
           <span>GST / Tax (5%)</span>
-          <span id="billTaxText" class="font-bold">₹0.00</span>
+          <span id="billTaxText" class="font-bold text-slate-800">₹0.00</span>
         </div>
-        <div class="flex items-center justify-between text-slate-900 pt-1.5 border-t border-blue-200 text-sm font-black">
+        <div class="flex items-center justify-between text-slate-900 pt-2 border-t border-blue-100 text-sm font-black">
           <span>Grand Total</span>
           <span id="billGrandTotalText" class="text-base text-[#2563eb]">₹0.00</span>
         </div>
       </div>
 
-      <!-- Checkout CTA Button -->
-      <button type="button" onclick="submitCheckoutBill()" id="checkoutBtn" class="w-full py-3.5 rounded-2xl bg-[#2563eb] hover:bg-blue-700 active:scale-98 text-white font-extrabold text-sm flex items-center justify-center space-x-2 shadow-xl shadow-blue-500/30 transition-all">
-        <span>Complete Bill & Deduct Stock</span>
-        <i data-lucide="check" class="w-5 h-5 stroke-[2.5]"></i>
-      </button>
+    </div>
 
+    <!-- Complete Bill CTA Button -->
+    <div class="pt-2 flex-shrink-0">
+      <button type="button" onclick="submitCheckoutBill()" id="checkoutBtn" class="w-full py-3.5 rounded-2xl bg-[#2563eb] hover:bg-blue-700 active:scale-98 text-white font-extrabold text-sm flex items-center justify-center space-x-2 shadow-lg shadow-blue-500/25 transition-all">
+        <i data-lucide="check" class="w-4.5 h-4.5 stroke-[3]"></i>
+        <span>Complete Bill</span>
+      </button>
     </div>
 
   </div>

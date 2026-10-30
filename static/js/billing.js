@@ -11,8 +11,31 @@ let isCartDrawerOpen = false;
 let currentInvoiceData = null;
 
 async function initBillingPOS() {
+  startLiveDateTime();
   await fetchBillingCatalog();
   calculateBillTotals();
+  renderCartDrawer();
+}
+
+function startLiveDateTime() {
+  function update() {
+    const now = new Date();
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const dateStr = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+    let hours = now.getHours();
+    const ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+    const timeStr = `${String(hours).padStart(2, "0")}:${minutes} ${ampm}`;
+
+    const dEl = document.getElementById("liveDateText");
+    const tEl = document.getElementById("liveTimeText");
+    if (dEl) dEl.innerText = dateStr;
+    if (tEl) tEl.innerText = timeStr;
+  }
+  update();
+  setInterval(update, 1000);
 }
 
 async function fetchBillingCatalog() {
@@ -43,7 +66,7 @@ function renderBillingCatalog() {
 
   if (filteredBillingProducts.length === 0) {
     container.innerHTML = `
-      <div class="text-center py-10 text-slate-400 text-xs">
+      <div class="col-span-full text-center py-12 text-slate-400 text-xs">
         <i data-lucide="package-search" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
         No matching products found in stock.
       </div>
@@ -57,45 +80,62 @@ function renderBillingCatalog() {
     const isOut = qty <= 0;
     const isLow = qty > 0 && qty <= (prod.min_stock_alert || 5);
 
-    let stockBadge = `<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-100 text-emerald-800">${qty} in stock</span>`;
+    let stockBadge = `
+      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center space-x-1">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
+        <span>${qty} in stock</span>
+      </span>
+    `;
     if (isOut) {
-      stockBadge = `<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-red-100 text-red-800">Out of Stock</span>`;
+      stockBadge = `
+        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-700 border border-red-100 flex items-center space-x-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"></span>
+          <span>Out of Stock</span>
+        </span>
+      `;
     } else if (isLow) {
-      stockBadge = `<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-100 text-amber-800">${qty} left (Low)</span>`;
+      stockBadge = `
+        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center space-x-1">
+          <i data-lucide="alert-triangle" class="w-2.5 h-2.5 text-amber-600"></i>
+          <span>${qty} left (Low)</span>
+        </span>
+      `;
     }
 
     const defaultSvg = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><rect x='2' y='7' width='20' height='14' rx='2' ry='2'></rect><path d='M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16'></path></svg>";
     const imgUrl = (prod.primary_image && prod.primary_image !== "/static/uploads/store_shelf_preview.jpg") ? prod.primary_image : defaultSvg;
 
     return `
-      <div class="p-3 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center justify-between space-x-3 transition-all hover:shadow-md">
-        <div class="flex items-center space-x-3 flex-1 min-w-0">
-          <img src="${imgUrl}" alt="${prod.name}" class="w-12 h-12 rounded-xl object-cover border border-slate-100 flex-shrink-0 bg-slate-50">
-          <div class="flex-1 min-w-0">
-            <h4 class="text-xs font-bold text-slate-900 truncate leading-snug">${prod.name}</h4>
-            <div class="flex items-center space-x-1.5 mt-0.5 text-[10px] text-slate-500">
-              <span class="font-semibold text-slate-700">${prod.brand || "General"}</span>
-              <span>•</span>
-              <span>${prod.net_weight || ""}</span>
-            </div>
-            <div class="flex items-center space-x-2 mt-1">
-              <span class="text-xs font-black text-[#2563eb]">₹${parseFloat(prod.mrp || 0).toFixed(2)}</span>
-              ${stockBadge}
-            </div>
-          </div>
+      <div class="bg-white rounded-2xl p-3 border border-slate-100/90 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
+        <!-- Top Image Container -->
+        <div class="w-full h-28 rounded-xl bg-[#f8fafc] flex items-center justify-center p-2 mb-2.5 overflow-hidden border border-slate-50/80">
+          <img src="${imgUrl}" alt="${prod.name}" class="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-200" onerror="this.src='${defaultSvg}'">
         </div>
 
-        <button type="button" 
-          onclick="addToCart(${prod.id})" 
-          ${isOut ? "disabled" : ""} 
-          class="w-9 h-9 rounded-xl flex items-center justify-center font-bold transition-all ${
-            isOut 
-              ? "bg-slate-100 text-slate-300 cursor-not-allowed" 
-              : "bg-blue-50 text-[#2563eb] hover:bg-[#2563eb] hover:text-white active:scale-95 shadow-sm"
-          }"
-          title="Add to Bill">
-          <i data-lucide="plus" class="w-4 h-4 stroke-[2.5]"></i>
-        </button>
+        <!-- Product Details -->
+        <div class="flex-1 min-w-0 flex flex-col justify-between">
+          <div>
+            <h4 class="text-xs font-bold text-slate-900 line-clamp-2 leading-snug min-h-[32px]">${prod.name}</h4>
+            <div class="text-[10px] text-slate-400 font-medium mt-0.5 mb-1 truncate">${prod.brand || 'General'} • ${prod.net_weight || ''}</div>
+          </div>
+          <div class="text-sm sm:text-base font-extrabold text-[#2563eb] mb-2">₹${parseFloat(prod.mrp || 0).toFixed(2)}</div>
+        </div>
+
+        <!-- Bottom Stock & Add Button -->
+        <div class="flex items-center justify-between pt-2 border-t border-slate-50 mt-auto">
+          ${stockBadge}
+          <button type="button" 
+            onclick="addToCart(${prod.id})" 
+            ${isOut ? "disabled" : ""} 
+            class="w-7 h-7 rounded-full flex items-center justify-center transition-all ${
+              isOut 
+                ? "bg-slate-100 text-slate-300 cursor-not-allowed" 
+                : "bg-blue-50 text-[#2563eb] hover:bg-[#2563eb] hover:text-white active:scale-90"
+            }"
+            title="Add to Bill">
+            <i data-lucide="plus" class="w-3.5 h-3.5 stroke-[2.5]"></i>
+          </button>
+        </div>
       </div>
     `;
   }).join("");
@@ -120,17 +160,26 @@ function handleBillingSearch(event) {
 
 function filterBillingCategory(category) {
   document.querySelectorAll(".category-chip").forEach(btn => {
-    btn.classList.remove("active", "bg-[#2563eb]", "text-white");
-    btn.classList.add("bg-slate-100", "text-slate-600");
+    btn.classList.remove("active", "bg-[#2563eb]", "text-white", "shadow-sm");
+    btn.classList.add("bg-white", "text-slate-600", "border", "border-slate-200/80");
   });
   
-  event.target.classList.add("active", "bg-[#2563eb]", "text-white");
-  event.target.classList.remove("bg-slate-100", "text-slate-600");
+  if (event && event.target) {
+    const chip = event.target.closest(".category-chip") || event.target;
+    chip.classList.add("active", "bg-[#2563eb]", "text-white", "shadow-sm");
+    chip.classList.remove("bg-white", "text-slate-600", "border", "border-slate-200/80");
+  }
 
-  if (category === "All") {
+  if (category === "All" || category === "All Items") {
     filteredBillingProducts = [...allBillingProducts];
   } else {
-    filteredBillingProducts = allBillingProducts.filter(p => (p.category || "").toLowerCase() === category.toLowerCase());
+    const cLower = category.toLowerCase();
+    filteredBillingProducts = allBillingProducts.filter(p => {
+      const pCat = (p.category || "").toLowerCase();
+      if (cLower === "spreads") return pCat.includes("spread") || pCat.includes("breakfast");
+      if (cLower === "cleaning") return pCat.includes("clean") || pCat.includes("hygiene");
+      return pCat.includes(cLower);
+    });
   }
   renderBillingCatalog();
 }
@@ -197,30 +246,40 @@ function renderCartDrawer() {
 
   const totalCount = currentCart.reduce((sum, i) => sum + i.quantity, 0);
   if (countBadge) countBadge.innerText = totalCount;
-  if (summaryText) summaryText.innerText = `${totalCount} Item${totalCount === 1 ? '' : 's'} in Cart`;
+  if (summaryText) summaryText.innerText = `${totalCount} Item${totalCount === 1 ? '' : 's'} in Bill`;
 
   if (!list) return;
 
   if (currentCart.length === 0) {
-    list.innerHTML = `<div class="text-center py-4 text-xs text-slate-400 font-medium">No items added to bill yet.</div>`;
+    list.innerHTML = `
+      <div class="text-center py-7 px-4 flex flex-col items-center justify-center">
+        <div class="relative w-12 h-12 rounded-2xl bg-blue-50 text-[#2563eb] flex items-center justify-center mb-2.5">
+          <i data-lucide="shopping-basket" class="w-6 h-6 stroke-[1.8]"></i>
+          <span class="absolute -top-1 -right-1 text-xs">✨</span>
+        </div>
+        <p class="text-xs font-bold text-slate-800">No items added to bill yet.</p>
+        <p class="text-[11px] text-slate-400 mt-0.5">Tap + on products to add.</p>
+      </div>
+    `;
+    if (window.lucide) lucide.createIcons();
     return;
   }
 
   list.innerHTML = currentCart.map(item => `
-    <div class="p-2.5 rounded-xl bg-white border border-slate-100 shadow-sm flex items-center justify-between space-x-2">
+    <div class="p-2.5 rounded-xl bg-slate-50/80 border border-slate-100 flex items-center justify-between space-x-2">
       <div class="flex-1 min-w-0">
         <h5 class="text-xs font-bold text-slate-900 truncate">${item.name}</h5>
-        <div class="text-[10px] text-slate-500 font-medium">₹${item.price.toFixed(2)} / unit</div>
+        <div class="text-[10px] text-slate-400 font-medium">₹${item.price.toFixed(2)} / unit</div>
       </div>
 
       <div class="flex items-center space-x-2">
-        <div class="flex items-center space-x-1.5 bg-slate-100 rounded-lg p-0.5">
-          <button type="button" onclick="adjustCartQty(${item.product_id}, -1)" class="w-6 h-6 rounded bg-white text-slate-800 font-black text-xs flex items-center justify-center hover:bg-slate-200">-</button>
+        <div class="flex items-center space-x-1.5 bg-white border border-slate-200 rounded-lg p-0.5">
+          <button type="button" onclick="adjustCartQty(${item.product_id}, -1)" class="w-6 h-6 rounded bg-slate-50 text-slate-800 font-black text-xs flex items-center justify-center hover:bg-slate-200">-</button>
           <span class="w-5 text-center text-xs font-bold text-slate-900">${item.quantity}</span>
-          <button type="button" onclick="adjustCartQty(${item.product_id}, 1)" class="w-6 h-6 rounded bg-white text-slate-800 font-black text-xs flex items-center justify-center hover:bg-slate-200">+</button>
+          <button type="button" onclick="adjustCartQty(${item.product_id}, 1)" class="w-6 h-6 rounded bg-slate-50 text-slate-800 font-black text-xs flex items-center justify-center hover:bg-slate-200">+</button>
         </div>
 
-        <span class="w-16 text-right text-xs font-black text-slate-900">₹${item.total.toFixed(2)}</span>
+        <span class="w-14 text-right text-xs font-black text-slate-900">₹${item.total.toFixed(2)}</span>
 
         <button type="button" onclick="adjustCartQty(${item.product_id}, -9999)" class="text-slate-400 hover:text-red-500 p-1" title="Remove">
           <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
@@ -273,15 +332,15 @@ function toggleCartDrawer() {
 function selectPaymentMode(mode) {
   currentPaymentMode = mode;
   document.querySelectorAll(".pay-mode-btn").forEach(b => {
-    b.classList.remove("active", "border-blue-500", "bg-blue-50", "text-blue-700");
-    b.classList.add("border-slate-200", "bg-white", "text-slate-700");
+    b.classList.remove("active", "border-2", "border-[#2563eb]", "bg-blue-50/60", "text-[#2563eb]");
+    b.classList.add("border", "border-slate-200", "bg-white", "text-slate-700");
   });
 
   const activeId = mode === "Cash" ? "payModeCash" : mode === "Card" ? "payModeCard" : "payModeUpi";
   const btn = document.getElementById(activeId);
   if (btn) {
-    btn.classList.add("active", "border-blue-500", "bg-blue-50", "text-blue-700");
-    btn.classList.remove("border-slate-200", "bg-white", "text-slate-700");
+    btn.classList.add("active", "border-2", "border-[#2563eb]", "bg-blue-50/60", "text-[#2563eb]");
+    btn.classList.remove("border", "border-slate-200", "bg-white", "text-slate-700");
   }
 }
 

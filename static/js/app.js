@@ -159,8 +159,19 @@ function initAuthGuard() {
     return;
   }
 
-  // Update header role badge
+  // Update header role badge & sidebar profile
   const badge = document.getElementById("headerRoleBadge");
+  const mobileBadge = document.getElementById("mobileRoleBadge");
+  const sideName = document.getElementById("sidebarUserName");
+  const sideRole = document.getElementById("sidebarUserRole");
+
+  const roleLabel = (user.role === "admin") ? "Administrator" : (user.role === "billing") ? "Billing Cashier" : "Store Staff";
+  const nameLabel = user.email ? (user.email.split("@")[0].charAt(0).toUpperCase() + user.email.split("@")[0].slice(1)) : "Admin";
+
+  if (sideName) sideName.innerText = nameLabel;
+  if (sideRole) sideRole.innerText = roleLabel;
+  if (mobileBadge) mobileBadge.innerText = (user.role === "admin" ? "ADM" : user.role === "billing" ? "POS" : "BM");
+
   if (badge) {
     if (user.role === "billing") {
       badge.innerText = "POS";
